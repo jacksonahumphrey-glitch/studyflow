@@ -1,0 +1,1600 @@
+{% extends "app_shell.html" %}
+{% block content %}
+
+<header class="page-head glass today-hero">
+  <div>
+    <div class="page-title">Today</div>
+    <div class="page-sub">Build a sharp, realistic plan and start moving now.</div>
+  </div>
+  <div class="pill" id="welcomeLine">Hi</div>
+</header>
+
+<div id="toast" class="toast"></div>
+
+<style>
+  .today-hero{
+    position:relative;
+    overflow:hidden;
+  }
+
+  .today-hero::after{
+    content:"";
+    position:absolute;
+    inset:auto -120px -120px auto;
+    width:260px;
+    height:260px;
+    background:radial-gradient(circle, rgba(122,166,255,.18), transparent 68%);
+    pointer-events:none;
+  }
+
+  .today-shell{
+    display:grid;
+    grid-template-columns:1.08fr .92fr;
+    gap:20px;
+    align-items:start;
+    position:relative;
+  }
+
+  .today-shell::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    background:
+      radial-gradient(circle at 72% 38%, rgba(70,110,210,.14), transparent 28%),
+      radial-gradient(circle at 28% 20%, rgba(120,200,200,.07), transparent 24%),
+      radial-gradient(circle at 58% 78%, rgba(80,120,255,.08), transparent 26%);
+  }
+
+  .today-card{
+    padding:22px;
+    position:relative;
+    overflow:hidden;
+    z-index:1;
+  }
+
+  @media (max-width: 1080px){
+    .today-shell{
+      grid-template-columns:1fr;
+    }
+  }
+
+  .today-card::before{
+    content:"";
+    position:absolute;
+    inset:-40% auto auto -20%;
+    width:220px;
+    height:220px;
+    background:radial-gradient(circle, rgba(120,200,200,.06), transparent 70%);
+    pointer-events:none;
+  }
+
+  .today-card > *{
+    position:relative;
+    z-index:1;
+  }
+
+  .card-head-tight{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
+  }
+
+  .section-title{
+    font-size:1.55rem;
+    font-weight:950;
+    letter-spacing:-.02em;
+    line-height:1.02;
+    margin:0;
+  }
+
+  .section-sub{
+    color:var(--muted);
+    margin-top:6px;
+    max-width:560px;
+    line-height:1.35;
+  }
+
+.hero-stats{
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+  gap:10px;
+  margin-bottom:16px;
+}
+
+.hero-stat{
+  border:1px solid rgba(255,255,255,.10);
+  background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+  border-radius:16px;
+  padding:12px 10px;
+  box-shadow:0 8px 18px rgba(0,0,0,.10);
+  min-height:84px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+}
+
+.hero-stat-num{
+  font-size:1.05rem;
+  font-weight:950;
+  line-height:1.05;
+  margin-bottom:6px;
+  color:rgba(255,255,255,.98);
+  max-width:100%;
+  white-space:normal;
+  word-break:break-word;
+  overflow-wrap:anywhere;
+}
+
+.hero-stat-label{
+  color:var(--muted);
+  font-size:.72rem;
+  font-weight:800;
+  line-height:1.1;
+  max-width:100%;
+  word-break:break-word;
+}
+
+@media (max-width: 900px){
+  .hero-stats{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+  }
+}
+
+  .availability-shell{
+    border:1px solid rgba(255,255,255,.10);
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+    border-radius:22px;
+    padding:18px;
+    margin-bottom:18px;
+    box-shadow:0 10px 24px rgba(0,0,0,.10);
+  }
+
+  .availability-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:14px;
+    flex-wrap:wrap;
+  }
+
+  .availability-copy{
+    min-width:0;
+  }
+
+  .availability-title{
+    font-size:1.2rem;
+    font-weight:950;
+    margin:0;
+  }
+
+  .availability-sub{
+    color:var(--muted);
+    margin-top:4px;
+  }
+
+  .availability-pill{
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.06);
+    color:rgba(255,255,255,.92);
+    padding:10px 14px;
+    border-radius:999px;
+    font-weight:900;
+    white-space:nowrap;
+  }
+
+  .time-inputs{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-bottom:12px;
+  }
+
+  @media (max-width: 720px){
+    .time-inputs{
+      grid-template-columns:1fr;
+    }
+  }
+
+  .input-label{
+    color:var(--muted);
+    margin:0 0 7px 2px;
+    font-size:.92rem;
+    font-weight:700;
+  }
+
+  #hoursInput, #minsInput{
+    background:rgba(255,255,255,.06) !important;
+    border:1px solid rgba(255,255,255,.12) !important;
+    color:rgba(255,255,255,.94) !important;
+    border-radius:16px !important;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.10);
+  }
+
+  #quickTimeChips{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+
+  #quickTimeChips .chip{
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.12);
+    color:rgba(255,255,255,.88);
+    border-radius:999px;
+    padding:8px 12px;
+    font-weight:900;
+    cursor:pointer;
+    transition:.18s ease;
+  }
+
+  #quickTimeChips .chip:hover{
+    background:rgba(255,255,255,.10);
+    transform:translateY(-1px);
+  }
+
+  .quick-start-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:2px;
+  }
+
+  .quick-start-btn{
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.05);
+    color:rgba(255,255,255,.93);
+    padding:10px 14px;
+    border-radius:14px;
+    font-weight:900;
+    cursor:pointer;
+    transition:.18s ease;
+  }
+
+  .quick-start-btn:hover{
+    background:rgba(255,255,255,.10);
+  }
+
+  .generate-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin:16px 0 12px;
+    flex-wrap:wrap;
+  }
+
+  .generate-copy{
+    min-width:0;
+  }
+
+  .generate-title{
+    font-size:1.2rem;
+    font-weight:950;
+    margin:0;
+  }
+
+  .generate-sub{
+    color:var(--muted);
+    margin-top:4px;
+  }
+
+  .generate-btn{
+    min-width:190px;
+    min-height:52px;
+    border-radius:16px !important;
+    font-weight:950 !important;
+    box-shadow:0 12px 28px rgba(74,126,190,.24);
+  }
+
+  .focus-box{
+    border:1px solid rgba(255,255,255,.10);
+    background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+    border-radius:22px;
+    padding:18px;
+    margin-bottom:14px;
+  }
+
+  .focus-kicker{
+    font-size:.8rem;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:rgba(255,255,255,.58);
+    font-weight:900;
+    margin-bottom:8px;
+  }
+
+  .focus-title{
+    font-size:1.5rem;
+    font-weight:950;
+    line-height:1.08;
+    letter-spacing:-.02em;
+    margin-bottom:8px;
+    color:rgba(255,255,255,.98);
+  }
+
+  .focus-sub{
+    color:var(--muted);
+    line-height:1.4;
+  }
+
+.pro-banner{
+  margin-top:12px;
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid rgba(120,200,200,.18);
+  background:rgba(120,200,200,.06);
+  font-weight:700;
+  font-size:.9rem;
+  opacity:.85;
+}
+
+  .celebration-card{
+    margin-top:14px;
+    padding:16px 18px;
+    border-radius:18px;
+    border:1px solid rgba(122,166,255,.22);
+    background:linear-gradient(180deg, rgba(122,166,255,.16), rgba(120,200,200,.08));
+    display:none;
+  }
+
+  .celebration-card.show{
+    display:block;
+    animation: popIn .28s ease;
+  }
+
+  .celebration-top{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:6px;
+  }
+
+  .celebration-emoji{
+    font-size:1.45rem;
+    line-height:1;
+  }
+
+  .celebration-title{
+    font-weight:950;
+    font-size:1.08rem;
+    color:rgba(255,255,255,.98);
+  }
+
+  .celebration-sub{
+    color:rgba(231,238,255,.84);
+    line-height:1.4;
+    font-weight:700;
+  }
+
+  @keyframes popIn{
+    from{
+      opacity:0;
+      transform:translateY(8px) scale(.98);
+    }
+    to{
+      opacity:1;
+      transform:translateY(0) scale(1);
+    }
+  }
+
+  .today-stat-row{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+
+  .today-stat{
+    padding:10px 14px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.05);
+    color:rgba(255,255,255,.88);
+    font-weight:800;
+    font-size:.95rem;
+  }
+
+  #openCount{
+    padding:8px 10px;
+    font-size:.9rem;
+    opacity:.9;
+  }
+
+  .task-list{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .task-empty{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:28px;
+    border:1px dashed rgba(255,255,255,.12);
+    border-radius:22px;
+    color:var(--muted);
+    background:rgba(255,255,255,.03);
+    line-height:1.45;
+  }
+
+  .task-card{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:14px;
+    padding:16px;
+    border-radius:20px;
+    border:1px solid rgba(255,255,255,.10);
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+    box-shadow:0 10px 24px rgba(0,0,0,.10);
+  }
+
+  .task-main{
+    min-width:0;
+    flex:1;
+  }
+
+  .task-top{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+    margin-bottom:8px;
+  }
+
+  .task-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:30px;
+    padding:4px 10px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.05);
+    font-size:.8rem;
+    font-weight:900;
+    color:rgba(255,255,255,.82);
+  }
+
+  .task-title{
+    font-weight:950;
+    font-size:1.08rem;
+    margin-bottom:4px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    color:rgba(255,255,255,.96);
+  }
+
+  .task-sub{
+    color:var(--muted);
+    font-size:.92rem;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .task-btn{
+    min-width:100px;
+    align-self:center;
+  }
+
+  .pagination-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-top:16px;
+    flex-wrap:wrap;
+  }
+
+  .pagination-left{
+    color:var(--muted);
+    font-size:.95rem;
+  }
+
+  .pagination-right{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+
+  .page-pill{
+    min-width:42px;
+    height:42px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.05);
+    color:rgba(255,255,255,.92);
+    font-weight:900;
+    cursor:pointer;
+  }
+
+  .page-pill:hover{
+    background:rgba(255,255,255,.10);
+  }
+
+  .page-pill.active{
+    background:rgba(122,166,255,.16);
+    border-color:rgba(122,166,255,.28);
+  }
+
+  .page-pill[disabled]{
+    opacity:.45;
+    cursor:not-allowed;
+  }
+
+  .prio-shell,
+  .blocks-shell{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .empty-box{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:24px;
+    border:1px dashed rgba(255,255,255,.12);
+    border-radius:22px;
+    background:rgba(255,255,255,.03);
+    color:var(--muted);
+    line-height:1.45;
+  }
+
+  .prio-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:14px;
+    border-radius:18px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.04);
+  }
+
+  .prio-num{
+    width:34px;
+    height:34px;
+    border-radius:999px;
+    display:grid;
+    place-items:center;
+    font-weight:950;
+    background:rgba(0,0,0,.22);
+    border:1px solid rgba(255,255,255,.12);
+    flex:0 0 auto;
+  }
+
+  .prio-main{
+    min-width:0;
+  }
+
+  .prio-title{
+    font-weight:950;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:52ch;
+  }
+
+  .prio-sub{
+    margin-top:4px;
+    color:var(--muted);
+    font-size:.92rem;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:70ch;
+  }
+
+  .plan-block{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    padding:14px;
+    border-radius:18px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.04);
+  }
+
+  .plan-block-title{
+    font-weight:900;
+    margin-bottom:4px;
+  }
+
+  .plan-block-sub{
+    color:var(--muted);
+    font-size:.92rem;
+  }
+
+  .energy-card{
+    margin-top:18px;
+    border:1px solid rgba(255,255,255,.10);
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+    border-radius:22px;
+    padding:18px;
+  }
+
+  .energy-title{
+    font-size:1.05rem;
+    font-weight:950;
+    margin-bottom:6px;
+  }
+
+  .energy-sub{
+    color:var(--muted);
+    line-height:1.45;
+  }
+
+  .toast{
+    position:fixed;
+    top:22px;
+    right:22px;
+    z-index:9999;
+    min-width:220px;
+    max-width:360px;
+    padding:12px 14px;
+    border-radius:14px;
+    border:1px solid rgba(120,200,200,.28);
+    background:rgba(20,32,48,.96);
+    color:rgba(255,255,255,.96);
+    box-shadow:0 14px 40px rgba(0,0,0,.28);
+    font-weight:800;
+    opacity:0;
+    pointer-events:none;
+    transform:translateY(-8px);
+    transition:opacity .18s ease, transform .18s ease;
+  }
+
+  .toast.show{
+    opacity:1;
+    transform:translateY(0);
+  }
+</style>
+
+<div class="today-shell">
+  <section class="glass today-card">
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="heroAvail">0m</div>
+        <div class="hero-stat-label">Available today</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="heroTasks">0</div>
+        <div class="hero-stat-label">Open tasks</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="heroLeft">0m</div>
+        <div class="hero-stat-label">Still open</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="heroDone">0</div>
+        <div class="hero-stat-label">Done today</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="heroMinutesDone">0m</div>
+        <div class="hero-stat-label">Minutes done</div>
+      </div>
+      <div class="hero-stat">
+  <div class="hero-stat-num" id="heroRank" style="font-size:.95rem;">Idle</div>
+  <div class="hero-stat-label">Rank</div>
+</div>
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="heroXP">0</div>
+        <div class="hero-stat-label">XP</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="heroLevel">1</div>
+        <div class="hero-stat-label">Level</div>
+      </div>
+    </div>
+
+    <div class="availability-shell">
+      <div class="availability-top">
+        <div class="availability-copy">
+          <div class="availability-title">Available Time</div>
+          <div class="availability-sub">Choose how much real time you can actually give today.</div>
+        </div>
+        <div class="availability-pill" id="availPill">—</div>
+      </div>
+
+      <div class="time-inputs">
+        <div>
+          <div class="input-label">Hours</div>
+          <input class="input" id="hoursInput" type="number" min="0" max="12" step="1" placeholder="0" inputmode="numeric">
+        </div>
+        <div>
+          <div class="input-label">Minutes</div>
+          <input class="input" id="minsInput" type="number" min="0" max="59" step="5" placeholder="0" inputmode="numeric">
+        </div>
+      </div>
+
+      <div class="chips" id="quickTimeChips"></div>
+
+      <div class="quick-start-row">
+        <button class="quick-start-btn" type="button" data-quick-plan="30">Quick Study</button>
+        <button class="quick-start-btn" type="button" data-quick-plan="60">Deep Work</button>
+        <button class="quick-start-btn" type="button" data-quick-plan="90">Lock In</button>
+      </div>
+    </div>
+
+    <div class="generate-bar">
+      <div class="generate-copy">
+        <div class="generate-title">Primary Focus</div>
+        <div class="generate-sub">Turn your tasks into a real plan you can actually follow.</div>
+      </div>
+      <button class="btn btn-primary generate-btn" id="genPlanBtn" type="button">Generate Today’s Plan</button>
+    </div>
+
+    <div class="focus-box" id="focusBox">
+      <div class="focus-kicker">Focus now</div>
+      <div class="focus-title" id="focusTitle">You’re clear today.</div>
+      <div class="focus-sub" id="focusSub">Add tasks in Inputs or generate a quick focus session to get moving.</div>
+    </div>
+
+    <div id="proBanner" class="pro-banner" style="display:none;"></div>
+
+    <div id="celebrationCard" class="celebration-card">
+      <div class="celebration-top">
+        <div class="celebration-emoji" id="celebrationEmoji">⚡</div>
+        <div class="celebration-title" id="celebrationTitle">Task finished</div>
+      </div>
+      <div class="celebration-sub" id="celebrationSub">Nice. Keep the momentum going.</div>
+    </div>
+
+
+  </section>
+
+  <section class="glass today-card">
+    <div class="card-head-tight" style="margin-bottom:12px;">
+      <div>
+        <h2 class="section-title">Top Priorities</h2>
+        <div class="section-sub">The few things that deserve your attention most today.</div>
+      </div>
+    </div>
+
+    <div class="prio-shell" id="prioCards">
+      <div class="empty-box">No priorities yet.<br>Add assignments in Inputs, then generate your plan.</div>
+    </div>
+
+    <div class="divider" style="margin:18px 0;"></div>
+
+    <div class="card-head-tight" style="margin-bottom:12px;">
+      <div>
+        <h2 class="section-title">Time Blocks</h2>
+        <div class="section-sub">A realistic sequence so you know exactly what to do next.</div>
+      </div>
+    </div>
+
+    <div class="blocks-shell" id="timeBlocks">
+      <div class="empty-box">No plan blocks yet.<br>Press Generate to build your day.</div>
+    </div>
+
+    <div style="margin-top:18px;">
+      <div class="card-head-tight">
+        <div>
+          <h2 class="section-title" style="font-size:1.28rem;">Tasks</h2>
+        </div>
+        <div class="pill" id="openCount">0</div>
+      </div>
+
+      <div class="today-stat-row">
+        <div class="today-stat" id="taskCountStat">0 total</div>
+        <div class="today-stat" id="taskPageStat">Page 0 of 0</div>
+      </div>
+
+      <div id="taskList" class="task-list">
+        <div class="task-empty">No tasks yet.<br>Add assignments in Inputs to build your schedule.</div>
+      </div>
+
+      <div class="pagination-bar" id="taskPaginationBar" style="display:none;">
+        <div class="pagination-left" id="taskPaginationInfo">Showing 0–0</div>
+        <div class="pagination-right" id="taskPaginationButtons"></div>
+      </div>
+    </div>
+
+<div id="activeTaskBox" class="glass" style="padding:16px; margin-top:14px; display:none;">
+  <div style="font-weight:900; font-size:1.05rem;">🔥 Active Task</div>
+  <div id="activeTaskTitle" style="margin-top:6px; font-weight:800;"></div>
+  <div id="activeTimer" style="margin-top:8px; font-size:1.2rem; font-weight:950;">00:00</div>
+
+  <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+    <button class="btn btn-primary" id="finishTaskBtn" type="button">Finish</button>
+    <button class="btn" id="pauseTaskBtn" type="button">Pause</button>
+  </div>
+</div>
+
+<div class="muted" id="leftoverLine" style="margin-top:14px;"></div>
+
+    <div class="energy-card">
+      <div class="energy-title">Momentum</div>
+      <div class="energy-sub" id="momentumText">Open the day with one clear move. A good plan should feel simple, focused, and easy to start.</div>
+    </div>
+  </section>
+</div>
+
+<script>
+(async function(){
+  const $ = (id) => document.getElementById(id);
+
+  const TASKS_PER_PAGE = 3;
+
+  let appliedAvail = 90;
+  let openTasks = [];
+  let currentTaskPage = 1;
+  let usageInfo = null;
+  let limitsInfo = null;
+  let billingInfo = null;
+  let doneTodayCount = 0;
+
+  let xp = 0;
+  let combo = 0;
+  let level = 1;
+
+  let activeTask = null;
+  let activeTaskStartedAt = null;
+  let activeTaskTimer = null;
+
+  function dopamineHit(message){
+    showToast(message);
+  }
+function startTask(id, title){
+  if (activeTask && activeTask.id !== id){
+    showToast("Finish or stop your current task first.");
+    return;
+  }
+
+  if (activeTask && activeTask.id === id){
+    showToast("That task is already active.");
+    return;
+  }
+
+activeTask = { id, title };
+activeTaskStartedAt = Date.now();
+pausedTime = 0;
+isPaused = false;
+$("pauseTaskBtn").textContent = "Pause";
+
+  $("activeTaskTitle").textContent = title;
+  $("activeTimer").textContent = "00:00";
+  $("activeTaskBox").style.display = "block";
+
+clearInterval(activeTaskTimer);
+activeTaskTimer = setInterval(updateTimer, 1000);
+
+  showToast(`Started: ${title}`);
+}
+
+let isPaused = false;
+let pausedTime = 0;
+
+function pauseTask(){
+  if (!activeTask) return;
+
+  if (!isPaused){
+    clearInterval(activeTaskTimer);
+    pausedTime += Date.now() - activeTaskStartedAt;
+    isPaused = true;
+    $("pauseTaskBtn").textContent = "Resume";
+    showToast("Paused");
+  } else {
+    activeTaskStartedAt = Date.now();
+    activeTaskTimer = setInterval(updateTimer, 1000);
+    isPaused = false;
+    $("pauseTaskBtn").textContent = "Pause";
+    showToast("Resumed");
+  }
+}
+
+function updateTimer(){
+  const elapsed = pausedTime + (Date.now() - activeTaskStartedAt);
+  const secs = Math.floor(elapsed / 1000);
+  const mm = String(Math.floor(secs / 60)).padStart(2, "0");
+  const ss = String(secs % 60).padStart(2, "0");
+  $("activeTimer").textContent = `${mm}:${ss}`;
+}
+
+
+async function finishTask(){
+  if (!activeTask){
+    showToast("No active task.");
+    return;
+  }
+
+const totalTime = pausedTime + (isPaused ? 0 : (Date.now() - activeTaskStartedAt));
+const secs = Math.floor(totalTime / 1000);
+  const bonusXp = Math.max(5, Math.floor(secs / 60) * 10);
+
+  try{
+    const xpRes = await fetchJson("/api/recall/xp", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ amount: bonusXp })
+    });
+
+    const xpInfo = xpRes.xp || {};
+    xp = Number(xpInfo.xp || 0);
+    level = Number(xpInfo.level || 1);
+    combo = Number(xpInfo.combo || 0);
+
+    updateProgressStats();
+    showToast(`+${bonusXp} XP focus bonus`);
+  }catch(err){
+    console.error(err);
+    showToast("Could not save focus XP.");
+  }
+
+clearInterval(activeTaskTimer);
+activeTaskTimer = null;
+activeTask = null;
+activeTaskStartedAt = null;
+pausedTime = 0;
+isPaused = false;
+$("pauseTaskBtn").textContent = "Pause";
+$("activeTaskBox").style.display = "none";
+$("activeTaskTitle").textContent = "";
+$("activeTimer").textContent = "00:00";
+}
+
+  function updateProgressStats(){
+    $("heroXP").textContent = String(xp);
+    $("heroLevel").textContent = String(level);
+  }
+
+  function showToast(message){
+    const toast = $("toast");
+    if (!toast) return;
+    toast.textContent = message || "";
+    toast.classList.add("show");
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => {
+      toast.classList.remove("show");
+    }, 2200);
+  }
+
+  function minsToLabel(m){
+    m = Math.max(0, Math.floor(Number(m) || 0));
+    if (m < 60) return `${m}m`;
+    const h = Math.floor(m / 60);
+    const r = m % 60;
+    return r ? `${h}h ${r}m` : `${h}h`;
+  }
+
+  function clamp(n, min, max){
+    n = Number(n);
+    if (Number.isNaN(n)) return min;
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function setInputsFromMinutes(mins){
+    mins = Math.max(0, Math.floor(Number(mins) || 0));
+    $("hoursInput").value = Math.floor(mins / 60);
+    $("minsInput").value = mins % 60;
+    updateHeroStatsPreview();
+  }
+
+  function readMinutesFromInputs(){
+    const hRaw = $("hoursInput").value;
+    const mRaw = $("minsInput").value;
+    const h = clamp(hRaw === "" ? 0 : hRaw, 0, 12);
+    const m = clamp(mRaw === "" ? 0 : mRaw, 0, 59);
+    return (h * 60) + m;
+  }
+
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  async function fetchJson(url, options){
+    const res = await fetch(url, options);
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+    const text = await res.text();
+
+    if (!ct.includes("application/json")){
+      throw new Error(`${url} returned non-JSON (status ${res.status}).`);
+    }
+
+    let data;
+    try{
+      data = JSON.parse(text);
+    }catch{
+      throw new Error(`${url} JSON parse failed (status ${res.status}).`);
+    }
+
+    if (!res.ok || data.ok === false){
+      const msg = (data && (data.error || data.message)) ? (data.error || data.message) : `HTTP ${res.status}`;
+      throw new Error(`${url} failed: ${msg}`);
+    }
+
+    return data;
+  }
+
+  function showHeaderError(msg){
+    $("welcomeLine").textContent = "API error";
+    $("welcomeLine").title = msg;
+  }
+
+  function nicePriority(priority){
+    const p = String(priority || "normal").toLowerCase();
+    return p.charAt(0).toUpperCase() + p.slice(1);
+  }
+
+  function updateHeroStatsPreview(leftOverride){
+    const previewAvail = readMinutesFromInputs();
+    $("heroAvail").textContent = minsToLabel(previewAvail);
+    $("heroTasks").textContent = String(openTasks.length);
+    $("heroDone").textContent = String(doneTodayCount);
+
+    const left = typeof leftOverride === "number" ? leftOverride : previewAvail;
+    $("heroLeft").textContent = minsToLabel(left);
+
+    updateProgressStats();
+  }
+
+  function setMomentum(text){
+    $("momentumText").textContent = text;
+  }
+
+  function getPlanName(){
+    const status = String((billingInfo && billingInfo.status) || "free").toLowerCase();
+    return (status === "active" || status === "trialing") ? "Pro" : "Free";
+  }
+
+  function renderPlanBanner(){
+    if (!limitsInfo || !usageInfo) return;
+
+    const planName = getPlanName();
+    const classesUsed = Number(usageInfo.classes || 0);
+    const classesMax = Number(limitsInfo.classes || 0);
+    const flashUsed = Number(usageInfo.flashcards || 0);
+    const flashMax = Number(limitsInfo.flashcards || 0);
+
+    if (planName === "Pro"){
+      $("proBanner").style.display = "block";
+      $("proBanner").textContent = `Pro plan active • ${classesUsed}/${classesMax} classes used • ${flashUsed}/${flashMax} flashcards used.`;
+    } else {
+      $("proBanner").style.display = "block";
+      $("proBanner").textContent = `Free plan • ${classesUsed}/${classesMax} classes used • ${flashUsed}/${flashMax} flashcards used. Upgrade for more room and smarter planning.`;
+    }
+  }
+
+  function celebrateTask(title){
+    const card = $("celebrationCard");
+    const emoji = $("celebrationEmoji");
+    const titleEl = $("celebrationTitle");
+    const subEl = $("celebrationSub");
+
+    const messages = [
+      { emoji:"⚡", title:"Nice work", sub:`You finished ${title}. Keep the streak moving.` },
+      { emoji:"🔥", title:"Momentum built", sub:`${title} is done. Roll straight into the next win.` },
+      { emoji:"✅", title:"Task complete", sub:`${title} is off your plate. That’s real progress.` },
+      { emoji:"🎯", title:"Locked in", sub:`You finished ${title}. Stay sharp and hit the next one.` },
+      { emoji:"💥", title:"Strong move", sub:`${title} is done. That’s how the day starts turning.` }
+    ];
+
+    const pick = messages[Math.floor(Math.random() * messages.length)];
+    emoji.textContent = pick.emoji;
+    titleEl.textContent = pick.title;
+    subEl.textContent = pick.sub;
+
+    card.classList.remove("show");
+    void card.offsetWidth;
+    card.classList.add("show");
+
+    clearTimeout(celebrateTask._timer);
+    celebrateTask._timer = setTimeout(() => {
+      card.classList.remove("show");
+    }, 4200);
+  }
+
+  function renderPlanPanels(plan){
+    const prioCards = $("prioCards");
+    const timeBlocks = $("timeBlocks");
+
+    prioCards.innerHTML = "";
+    timeBlocks.innerHTML = "";
+
+    if (!plan){
+      prioCards.innerHTML = `<div class="empty-box">No priorities yet.<br>Add assignments in Inputs, then generate your plan.</div>`;
+      timeBlocks.innerHTML = `<div class="empty-box">No plan blocks yet.<br>Press Generate to build your day.</div>`;
+      return;
+    }
+
+    const top3 = plan.top3 || [];
+    const blocks = plan.time_blocks || [];
+
+    if (!top3.length){
+      prioCards.innerHTML = `<div class="empty-box">No priorities right now.</div>`;
+    }else{
+      top3.slice(0,3).forEach((x, i) => {
+        const card = document.createElement("div");
+        card.className = "prio-row";
+
+        const subParts = [];
+        if (x.class_name) subParts.push(x.class_name);
+        if (x.due_date) subParts.push("Due " + x.due_date);
+        if (x.priority) subParts.push(nicePriority(x.priority) + " priority");
+        if (x.task_type) subParts.push(x.task_type);
+
+        const sub = subParts.length ? subParts.join(" • ") : "No extra details";
+
+        card.innerHTML = `
+          <div class="prio-num">${i + 1}</div>
+          <div class="prio-main">
+            <div class="prio-title">${escapeHtml(x.title)}</div>
+            <div class="prio-sub">${escapeHtml(sub)}</div>
+          </div>
+        `;
+        prioCards.appendChild(card);
+      });
+    }
+
+    if (!blocks.length){
+      timeBlocks.innerHTML = `<div class="empty-box">No plan blocks yet.</div>`;
+    }else{
+      blocks.forEach((b, i) => {
+        const row = document.createElement("div");
+        row.className = "plan-block";
+
+        const sub = [];
+        if (b.class) sub.push(b.class);
+        sub.push(`${b.minutes} min`);
+        if (b.task_type) sub.push(b.task_type);
+        if (b.priority === "high") sub.push("High priority");
+
+        row.innerHTML = `
+          <div>
+            <div class="plan-block-title">${i + 1}. ${escapeHtml(b.title)}</div>
+            <div class="plan-block-sub">${escapeHtml(sub.join(" • "))}</div>
+          </div>
+        `;
+
+        timeBlocks.appendChild(row);
+      });
+    }
+  }
+
+  async function refreshTodayStats(){
+    try{
+      const statsRes = await fetchJson("/api/stats/today");
+      const stats = statsRes.stats || {};
+      doneTodayCount = Number(stats.done_today || 0);
+      xp = Number(stats.xp || 0);
+      level = Number(stats.level || 1);
+      combo = Number(stats.combo || 0);
+
+      $("heroDone").textContent = String(doneTodayCount);
+      $("heroMinutesDone").textContent = minsToLabel(Number(stats.completed_minutes_today || 0));
+      $("heroRank").textContent = String(stats.rank || "Idle");
+
+      updateProgressStats();
+    }catch(err){
+      console.error(err);
+    }
+  }
+
+  function renderTasks(){
+    const taskList = $("taskList");
+    const taskCountStat = $("taskCountStat");
+    const taskPageStat = $("taskPageStat");
+    const taskPaginationBar = $("taskPaginationBar");
+    const taskPaginationInfo = $("taskPaginationInfo");
+    const taskPaginationButtons = $("taskPaginationButtons");
+
+    const total = openTasks.length;
+    const totalPages = Math.max(1, Math.ceil(total / TASKS_PER_PAGE));
+
+    if (total === 0){
+      taskCountStat.textContent = "0 total";
+      taskPageStat.textContent = "Page 0 of 0";
+      taskList.innerHTML = `<div class="task-empty">No tasks yet.<br>Add assignments in Inputs or generate a quick study session.</div>`;
+      taskPaginationBar.style.display = "none";
+      $("openCount").textContent = "0";
+      combo = 0;
+      updateHeroStatsPreview(readMinutesFromInputs());
+      return;
+    }
+
+    if (currentTaskPage > totalPages) currentTaskPage = totalPages;
+    if (currentTaskPage < 1) currentTaskPage = 1;
+
+    $("openCount").textContent = String(total);
+    taskCountStat.textContent = `${total} total`;
+    taskPageStat.textContent = `Page ${currentTaskPage} of ${totalPages}`;
+
+    const start = (currentTaskPage - 1) * TASKS_PER_PAGE;
+    const end = start + TASKS_PER_PAGE;
+    const pageItems = openTasks.slice(start, end);
+
+    taskList.innerHTML = "";
+
+    for (const t of pageItems){
+      const details = [];
+      if (t.class_name) details.push(t.class_name);
+      details.push(t.due_date ? `Due ${t.due_date}` : "No due");
+      details.push(`${t.minutes}m`);
+      if (t.priority) details.push(`${nicePriority(t.priority)} priority`);
+      if (t.task_type) details.push(t.task_type);
+
+      const badges = [];
+      if (t.task_type) badges.push(`<div class="task-badge">${escapeHtml(t.task_type)}</div>`);
+      if (t.priority === "high") badges.push(`<div class="task-badge">High priority</div>`);
+      if (t.due_date) badges.push(`<div class="task-badge">Due soon</div>`);
+
+const row = document.createElement("div");
+row.className = "task-card";
+row.innerHTML = `
+  <div class="task-main">
+    <div class="task-top">${badges.join("")}</div>
+    <div class="task-title">${escapeHtml(t.title)}</div>
+    <div class="task-sub">${escapeHtml(details.join(" • "))}</div>
+  </div>
+  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+    <button class="btn task-btn start-task-btn" type="button">Start</button>
+    <button class="btn task-btn done-task-btn" type="button">Done</button>
+  </div>
+`;
+
+row.querySelector(".start-task-btn").onclick = () => {
+  startTask(t.id, t.title);
+};
+
+row.querySelector(".done-task-btn").onclick = async () => {
+  const doneBtn = row.querySelector(".done-task-btn");
+  doneBtn.disabled = true;
+  doneBtn.textContent = "Done…";
+
+if (activeTask && Number(activeTask.id) === Number(t.id)){
+  clearInterval(activeTaskTimer);
+  activeTaskTimer = null;
+  activeTask = null;
+  activeTaskStartedAt = null;
+  pausedTime = 0;
+  isPaused = false;
+  $("pauseTaskBtn").textContent = "Pause";
+  $("activeTaskBox").style.display = "none";
+  $("activeTaskTitle").textContent = "";
+  $("activeTimer").textContent = "00:00";
+}
+
+  try{
+    const doneRes = await fetchJson(`/api/assignments/${t.id}/status`, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ status:"done" })
+    });
+
+          const xpInfo = doneRes.xp || {};
+          const alreadyDone = !!doneRes.already_done;
+
+          xp = Number(xpInfo.xp || 0);
+          level = Number(xpInfo.level || 1);
+          combo = Number(xpInfo.combo || 0);
+
+          const gain = Number(xpInfo.gain || 0);
+          const leveledUp = Number(xpInfo.leveled_up || 0);
+
+          if (alreadyDone){
+            dopamineHit("Already counted.");
+          } else if (leveledUp > 0){
+            dopamineHit(`⬆️ Level ${level}! +${gain} XP`);
+          } else if (combo >= 3){
+            dopamineHit(`🔥 ${combo} streak! +${gain} XP`);
+          } else {
+            dopamineHit(`⚡ +${gain} XP`);
+          }
+
+          updateProgressStats();
+          celebrateTask(t.title);
+
+          const usedMins = Math.max(0, Number(t.minutes || 0));
+          appliedAvail = Math.max(0, appliedAvail - usedMins);
+
+          await fetchJson("/api/settings", {
+            method:"POST",
+            headers:{ "Content-Type":"application/json" },
+            body: JSON.stringify({ available_minutes: appliedAvail })
+          });
+
+          const planRes = await fetchJson("/api/plan/generate", {
+            method:"POST",
+            headers:{ "Content-Type":"application/json" },
+            body: JSON.stringify({ available_minutes: appliedAvail })
+          });
+
+          openTasks = openTasks.filter(x => Number(x.id) !== Number(t.id));
+
+          await refreshTodayStats();
+
+          renderTasks();
+          $("availPill").textContent = `${minsToLabel(appliedAvail)} available`;
+          $("leftoverLine").textContent = `${minsToLabel(appliedAvail)} unassigned`;
+
+          if (openTasks.length > 0){
+            setMomentum(`Good. ${t.title} is done. Don’t stop now — move straight into the next task.`);
+          } else {
+            setMomentum("Everything open is cleared. That’s a solid day.");
+          }
+
+          renderPlanPanels(planRes.plan || null);
+
+          if (planRes.plan){
+            const blocks = planRes.plan.time_blocks || [];
+            const used = blocks.reduce((s, b) => s + (b.minutes || 0), 0);
+            const base = (planRes.plan.available_minutes != null) ? Number(planRes.plan.available_minutes) : appliedAvail;
+            const left = Math.max(0, base - used);
+            $("leftoverLine").textContent = `${minsToLabel(left)} unassigned`;
+            $("heroLeft").textContent = minsToLabel(left);
+
+            const top3 = planRes.plan.top3 || [];
+            if (top3.length){
+              $("focusTitle").textContent = top3[0].title;
+              $("focusSub").textContent = planRes.plan.plan_type === "pro"
+                ? "This is the strongest move for today based on urgency, priority, and time."
+                : "This is the best place to start building momentum today.";
+            } else {
+              $("focusTitle").textContent = "You’re clear today.";
+              $("focusSub").textContent = "No open assignments were pulled into the plan.";
+            }
+          }
+        }catch(err){
+          showHeaderError(String(err));
+          showToast("Done failed.");
+          console.error(err);
+          doneBtn.disabled = false;
+          doneBtn.textContent = "Done";
+        }
+      };
+
+      taskList.appendChild(row);
+    }
+
+    taskPaginationBar.style.display = "flex";
+    taskPaginationInfo.textContent = `Showing ${start + 1}–${Math.min(end, total)} of ${total}`;
+
+    taskPaginationButtons.innerHTML = "";
+
+    const prev = document.createElement("button");
+    prev.className = "page-pill";
+    prev.textContent = "‹";
+    prev.disabled = currentTaskPage === 1;
+    prev.onclick = () => {
+      if (currentTaskPage > 1){
+        currentTaskPage--;
+        renderTasks();
+      }
+    };
+    taskPaginationButtons.appendChild(prev);
+
+    for (let i = 1; i <= totalPages; i++){
+      const b = document.createElement("button");
+      b.className = "page-pill" + (i === currentTaskPage ? " active" : "");
+      b.textContent = i;
+      b.onclick = () => {
+        currentTaskPage = i;
+        renderTasks();
+      };
+      taskPaginationButtons.appendChild(b);
+    }
+
+    const next = document.createElement("button");
+    next.className = "page-pill";
+    next.textContent = "›";
+    next.disabled = currentTaskPage === totalPages;
+    next.onclick = () => {
+      if (currentTaskPage < totalPages){
+        currentTaskPage++;
+        renderTasks();
+      }
+    };
+    taskPaginationButtons.appendChild(next);
+
+    updateHeroStatsPreview();
+  }
+
+  const quick = [15,30,45,60,90,120,180];
+  const chipWrap = $("quickTimeChips");
+  chipWrap.innerHTML = "";
+  for (const m of quick){
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.type = "button";
+    b.textContent = minsToLabel(m);
+    b.onclick = () => setInputsFromMinutes(m);
+    chipWrap.appendChild(b);
+  }
+
+  document.querySelectorAll("[data-quick-plan]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const mins = Number(btn.getAttribute("data-quick-plan") || 0);
+      if (mins > 0){
+        setInputsFromMinutes(mins);
+        showToast(`${minsToLabel(mins)} loaded.`);
+      }
+    });
+  });
+
+  $("hoursInput").addEventListener("input", () => updateHeroStatsPreview());
+  $("minsInput").addEventListener("input", () => updateHeroStatsPreview());
+
+  try{
+    const settings = await fetchJson("/api/settings");
+    const name = (settings.profile && settings.profile.name) ? settings.profile.name : "there";
+    $("welcomeLine").textContent = `Hi, ${name}`;
+
+    usageInfo = settings.usage || {};
+    limitsInfo = settings.limits || {};
+    billingInfo = settings.billing || {};
+
+    const todayStats = settings.today_stats || {};
+    doneTodayCount = Number(todayStats.done_today || 0);
+    xp = Number(todayStats.xp || 0);
+    level = Number(todayStats.level || 1);
+    combo = Number(todayStats.combo || 0);
+
+    $("heroDone").textContent = String(doneTodayCount);
+    $("heroMinutesDone").textContent = minsToLabel(Number(todayStats.completed_minutes_today || 0));
+    $("heroRank").textContent = String(todayStats.rank || "Idle");
+
+    updateProgressStats();
+
+    const fromSettingsObj =
+      (settings.settings && settings.settings.available_minutes != null) ? Number(settings.settings.available_minutes) :
+      (settings.available_minutes != null) ? Number(settings.available_minutes) :
+      90;
+
+    appliedAvail = Number.isFinite(fromSettingsObj) && fromSettingsObj >= 0 ? fromSettingsObj : 90;
+
+    $("availPill").textContent = `${minsToLabel(appliedAvail)} available`;
+    setInputsFromMinutes(appliedAvail);
+    $("leftoverLine").textContent = `${minsToLabel(appliedAvail)} unassigned`;
+    renderPlanBanner();
+    setMomentum("Give yourself a realistic target, generate the plan, and start with the first block.");
+  }catch(err){
+    showHeaderError(String(err));
+    $("availPill").textContent = `${minsToLabel(appliedAvail)} available`;
+    setInputsFromMinutes(appliedAvail);
+    $("leftoverLine").textContent = `${minsToLabel(appliedAvail)} unassigned`;
+  }
+
+  try{
+    const a = await fetchJson("/api/assignments");
+    openTasks = (a.assignments || []).filter(x => x.status === "open");
+    renderTasks();
+
+    if (openTasks.length > 0){
+      setMomentum(`You have ${openTasks.length} open task${openTasks.length === 1 ? "" : "s"}. Generate a plan and make the first move fast.`);
+    }else{
+      setMomentum("You’re open right now. Add tasks in Inputs or use a quick study block to stay in motion.");
+    }
+  }catch(err){
+    showHeaderError(String(err));
+    $("taskList").innerHTML = `<div class="task-empty">Couldn't load tasks</div>`;
+    $("taskPaginationBar").style.display = "none";
+  }
+
+  try{
+    const p = await fetchJson("/api/plan/today");
+    const plan = p.plan;
+
+    if (!plan){
+      $("focusTitle").textContent = openTasks.length ? "Ready to build your day." : "You’re clear today.";
+      $("focusSub").textContent = openTasks.length
+        ? "Press Generate Today’s Plan to turn your open work into a simple path forward."
+        : "Add tasks in Inputs or generate a quick focus session to create momentum.";
+      renderPlanPanels(null);
+      $("leftoverLine").textContent = `${minsToLabel(readMinutesFromInputs())} unassigned`;
+      updateHeroStatsPreview(readMinutesFromInputs());
+    }else{
+      const top3 = plan.top3 || [];
+      const blocks = plan.time_blocks || [];
+      const planType = plan.plan_type || "free";
+      const buffer = Number(plan.buffer_minutes || 0);
+
+      if (top3.length){
+        $("focusTitle").textContent = top3[0].title;
+        $("focusSub").textContent = planType === "pro"
+          ? "This is the strongest move for today based on urgency, priority, and time."
+          : "This is the best place to start building momentum today.";
+      }else{
+        $("focusTitle").textContent = "You’re clear today.";
+        $("focusSub").textContent = "No open assignments were pulled into the plan.";
+      }
+
+      renderPlanBanner();
+
+      if (planType === "pro"){
+        $("proBanner").style.display = "block";
+        $("proBanner").textContent = buffer > 0
+          ? `Pro plan active • Smarter ordering, bigger limits, and ${minsToLabel(buffer)} protected as buffer time.`
+          : `Pro plan active • Smarter ordering and bigger limits are active.`;
+      }
+
+      renderPlanPanels(plan);
+
+      const used = blocks.reduce((s, b) => s + (b.minutes || 0), 0);
+      const base = (plan.available_minutes != null) ? Number(plan.available_minutes) : appliedAvail;
+      const left = Math.max(0, base - used);
+
+      $("leftoverLine").textContent = `${minsToLabel(left)} unassigned`;
+      $("heroLeft").textContent = minsToLabel(left);
+
+      if (top3.length){
+        setMomentum(`Start with ${top3[0].title}. Don’t think too long — begin the first block and build from there.`);
+      }else{
+        setMomentum("A good day starts with one clear move. Generate the plan, then follow the first block.");
+      }
+    }
+  }catch(err){
+    showHeaderError(String(err));
+    console.error(err);
+  }
+
+$("finishTaskBtn").onclick = finishTask;
+$("pauseTaskBtn").onclick = pauseTask;
+
+  $("genPlanBtn").onclick = async () => {
+    const btn = $("genPlanBtn");
+    btn.disabled = true;
+    const old = btn.textContent;
+    btn.textContent = "Generating…";
+
+    try{
+      const newAvail = readMinutesFromInputs();
+
+      if (newAvail <= 0){
+        showToast("Add some available time first.");
+        btn.disabled = false;
+        btn.textContent = old;
+        return;
+      }
+
+      appliedAvail = newAvail;
+      $("availPill").textContent = `${minsToLabel(appliedAvail)} available`;
+      $("heroAvail").textContent = minsToLabel(appliedAvail);
+
+      await fetchJson("/api/settings", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ available_minutes: appliedAvail })
+      });
+
+      await fetchJson("/api/plan/generate", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ available_minutes: appliedAvail })
+      });
+
+      location.reload();
+    }catch(err){
+      showHeaderError(String(err));
+      showToast("Generate failed.");
+      console.error(err);
+    }finally{
+      btn.disabled = false;
+      btn.textContent = old;
+    }
+  };
+})();
+</script>
+
+{% endblock %}

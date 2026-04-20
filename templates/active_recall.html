@@ -1,0 +1,1632 @@
+{% extends "app_shell.html" %}
+{% block content %}
+
+<header class="page-head glass">
+  <div>
+    <div class="page-title">Practice</div>
+    <div class="page-sub">Practice with flashcards and quizzes.</div>
+  </div>
+
+  <div class="practice-tabs">
+    <button class="tab-btn active" id="flashTabBtn" type="button">Flashcards</button>
+    <button class="tab-btn" id="quizTabBtn" type="button">Quiz</button>
+  </div>
+</header>
+
+<style>
+  .practice-tabs{
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
+
+  .tab-btn{
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.06);
+    color:rgba(255,255,255,.92);
+    padding:12px 18px;
+    border-radius:999px;
+    font-weight:900;
+    cursor:pointer;
+    transition:.18s ease;
+  }
+  .tab-btn:hover{
+    background:rgba(255,255,255,.10);
+  }
+  .tab-btn.active{
+    background:rgba(122,166,255,.16);
+    border-color:rgba(122,166,255,.28);
+    box-shadow:0 0 0 1px rgba(122,166,255,.10) inset;
+  }
+
+  .practice-pane{ display:none; }
+  .practice-pane.active{ display:block; }
+
+  .practice-grid{
+    display:grid;
+    grid-template-columns: 1.1fr .9fr;
+    gap:20px;
+    align-items:start;
+  }
+
+  @media (max-width: 1080px){
+    .practice-grid{
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .practice-card{
+    padding:22px;
+  }
+
+  .practice-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:16px;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+  }
+
+  .practice-head-left{
+    min-width:0;
+  }
+
+  .practice-title{
+    font-size:1.7rem;
+    font-weight:950;
+    line-height:1.02;
+    letter-spacing:-.02em;
+    margin-bottom:8px;
+  }
+
+  .practice-sub{
+    color:var(--muted);
+    max-width:520px;
+  }
+
+  .limit-chip{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:38px;
+    padding:8px 14px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.05);
+    color:rgba(255,255,255,.90);
+    font-weight:900;
+    font-size:.9rem;
+    white-space:nowrap;
+  }
+
+  .upgrade-banner{
+    display:none;
+    margin-bottom:16px;
+    padding:14px 16px;
+    border-radius:18px;
+    border:1px solid rgba(122,166,255,.22);
+    background:linear-gradient(180deg, rgba(122,166,255,.12), rgba(122,166,255,.06));
+    color:rgba(255,255,255,.94);
+  }
+
+  .upgrade-banner.show{
+    display:block;
+  }
+
+  .upgrade-banner-title{
+    font-weight:950;
+    margin-bottom:4px;
+  }
+
+  .upgrade-banner-sub{
+    color:rgba(231,238,255,.78);
+    line-height:1.4;
+    font-size:.95rem;
+  }
+
+  .upgrade-banner-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:12px;
+  }
+
+  .flash-topbar{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+  }
+
+  .flash-stat{
+    padding:10px 14px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.05);
+    color:rgba(255,255,255,.88);
+    font-weight:800;
+    font-size:.95rem;
+  }
+
+  .flash-filter{
+    min-width:220px;
+    flex:1;
+  }
+
+  .flash-list{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    min-height:420px;
+  }
+
+  .flash-empty{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:28px;
+    border:1px dashed rgba(255,255,255,.12);
+    border-radius:22px;
+    color:var(--muted);
+    background:rgba(255,255,255,.03);
+    min-height:300px;
+  }
+
+  .flash-card{
+    border:1px solid rgba(255,255,255,.10);
+    background:linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.03));
+    border-radius:22px;
+    padding:18px 18px 16px;
+    box-shadow:0 10px 26px rgba(0,0,0,.12);
+  }
+
+  .flash-card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:14px;
+    margin-bottom:10px;
+  }
+
+  .flash-card-meta{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-width:0;
+    flex:1;
+  }
+
+  .flash-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    width:max-content;
+    padding:6px 10px;
+    border-radius:999px;
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.10);
+    color:rgba(255,255,255,.78);
+    font-size:.82rem;
+    font-weight:800;
+  }
+
+  .flash-front{
+    font-size:1.22rem;
+    line-height:1.25;
+    font-weight:900;
+    color:rgba(255,255,255,.96);
+    word-break:break-word;
+  }
+
+  .flash-answer-wrap{
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px solid rgba(255,255,255,.08);
+    display:none;
+  }
+
+  .flash-answer-wrap.open{
+    display:block;
+  }
+
+  .flash-answer-label{
+    font-size:.82rem;
+    font-weight:900;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:rgba(255,255,255,.60);
+    margin-bottom:8px;
+  }
+
+  .flash-answer{
+    color:rgba(255,255,255,.90);
+    font-size:1.02rem;
+    line-height:1.35;
+    word-break:break-word;
+  }
+
+  .flash-actions{
+    display:flex;
+    gap:10px;
+    margin-top:14px;
+    flex-wrap:wrap;
+  }
+
+  .flash-actions .btn{
+    min-width:110px;
+  }
+
+  .pagination-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-top:18px;
+    flex-wrap:wrap;
+  }
+
+  .pagination-left{
+    color:var(--muted);
+    font-size:.95rem;
+  }
+
+  .pagination-right{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+
+  .page-pill{
+    min-width:42px;
+    height:42px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.05);
+    color:rgba(255,255,255,.92);
+    font-weight:900;
+    cursor:pointer;
+  }
+
+  .page-pill:hover{
+    background:rgba(255,255,255,.10);
+  }
+
+  .page-pill.active{
+    background:rgba(122,166,255,.16);
+    border-color:rgba(122,166,255,.28);
+  }
+
+  .create-stack{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+
+  .create-topline{
+    color:var(--muted);
+    margin-top:4px;
+  }
+
+  .quick-actions{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  .quick-actions .mini-title{
+    margin:0;
+  }
+
+  .quick-btns{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  textarea.input{
+    min-height:128px;
+    resize:vertical;
+  }
+
+  .practice-message{
+    color:var(--muted);
+    min-height:22px;
+    font-weight:700;
+  }
+
+  .limit-line{
+    color:var(--muted);
+    font-size:.93rem;
+    line-height:1.4;
+  }
+
+  .limit-line strong{
+    color:rgba(255,255,255,.94);
+  }
+
+  .quiz-grid{
+    display:grid;
+    grid-template-columns: 1.15fr .85fr;
+    gap:20px;
+    align-items:start;
+  }
+
+  @media (max-width: 1080px){
+    .quiz-grid{
+      grid-template-columns:1fr;
+    }
+  }
+
+  .quiz-topbar{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+  }
+
+  .quiz-shell{
+    border:1px solid rgba(255,255,255,.10);
+    background:linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.03));
+    border-radius:22px;
+    padding:18px;
+    min-height:420px;
+    box-shadow:0 10px 26px rgba(0,0,0,.12);
+  }
+
+  .quiz-empty{
+    min-height:320px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    color:var(--muted);
+    border:1px dashed rgba(255,255,255,.12);
+    border-radius:18px;
+    background:rgba(255,255,255,.03);
+    padding:28px;
+  }
+
+  .quiz-stage{
+    display:none;
+  }
+
+  .quiz-stage.active{
+    display:block;
+  }
+
+  .quiz-card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:14px;
+    flex-wrap:wrap;
+  }
+
+  .quiz-question-label{
+    font-size:.82rem;
+    font-weight:900;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:rgba(255,255,255,.60);
+    margin-bottom:8px;
+  }
+
+  .quiz-question{
+    font-size:1.28rem;
+    line-height:1.28;
+    font-weight:950;
+    color:rgba(255,255,255,.96);
+    word-break:break-word;
+  }
+
+  .quiz-meta{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:14px;
+    margin-bottom:14px;
+  }
+
+  .quiz-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:34px;
+    padding:6px 12px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.05);
+    font-weight:900;
+    font-size:.82rem;
+    color:rgba(255,255,255,.88);
+  }
+
+  .quiz-answer-block{
+    margin-top:10px;
+  }
+
+  .quiz-answer-block .mini-title{
+    margin-bottom:8px;
+  }
+
+  .quiz-result{
+    margin-top:14px;
+    padding:12px 14px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.10);
+    display:none;
+    font-weight:800;
+  }
+
+  .quiz-result.ok{
+    display:block;
+    background:rgba(88, 200, 133, .12);
+    border-color:rgba(88, 200, 133, .28);
+    color:rgba(220,255,231,.96);
+  }
+
+  .quiz-result.bad{
+    display:block;
+    background:rgba(255, 120, 120, .10);
+    border-color:rgba(255, 120, 120, .22);
+    color:rgba(255,225,225,.95);
+  }
+
+  .quiz-reveal{
+    margin-top:14px;
+    padding:14px;
+    border-radius:18px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.04);
+    display:none;
+  }
+
+  .quiz-reveal.open{
+    display:block;
+  }
+
+  .quiz-reveal-label{
+    font-size:.82rem;
+    font-weight:900;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:rgba(255,255,255,.60);
+    margin-bottom:8px;
+  }
+
+  .quiz-reveal-text{
+    color:rgba(255,255,255,.92);
+    line-height:1.4;
+    word-break:break-word;
+  }
+
+  .quiz-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:16px;
+  }
+
+  .quiz-actions .btn{
+    min-width:120px;
+  }
+
+  .quiz-side{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+
+  .quiz-side-card{
+    padding:18px;
+    border-radius:22px;
+    border:1px solid rgba(255,255,255,.10);
+    background:linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.03));
+    box-shadow:0 10px 26px rgba(0,0,0,.12);
+  }
+
+  .quiz-side-title{
+    font-size:1.08rem;
+    font-weight:950;
+    margin-bottom:8px;
+  }
+
+  .quiz-stats{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-top:12px;
+  }
+
+  .quiz-stat{
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.04);
+    border-radius:18px;
+    padding:14px;
+  }
+
+  .quiz-stat-num{
+    font-size:1.35rem;
+    font-weight:950;
+    line-height:1;
+    margin-bottom:6px;
+  }
+
+  .quiz-stat-label{
+    color:var(--muted);
+    font-size:.9rem;
+  }
+
+  .quiz-progress{
+    margin-top:14px;
+  }
+
+  .quiz-progress-bar{
+    width:100%;
+    height:12px;
+    border-radius:999px;
+    overflow:hidden;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.08);
+  }
+
+  .quiz-progress-fill{
+    height:100%;
+    width:0%;
+    border-radius:999px;
+    background:linear-gradient(90deg, rgba(122,166,255,.55), rgba(120,200,200,.75));
+    transition:width .2s ease;
+  }
+
+  .quiz-progress-line{
+    color:var(--muted);
+    margin-top:8px;
+    font-size:.92rem;
+    font-weight:700;
+  }
+
+  .xp-wrap{
+    margin-top:16px;
+  }
+
+  .xp-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:8px;
+    font-weight:900;
+    color:rgba(255,255,255,.92);
+  }
+
+  .xp-line{
+    color:var(--muted);
+    font-size:.9rem;
+    margin-top:8px;
+  }
+
+  .xp-gain{
+    margin-top:10px;
+    padding:10px 12px;
+    border-radius:14px;
+    border:1px solid rgba(120,200,200,.24);
+    background:rgba(120,200,200,.10);
+    color:rgba(230,255,255,.96);
+    font-weight:900;
+    display:none;
+  }
+
+  .xp-gain.show{
+    display:block;
+  }
+
+  .finish-wrap{
+    min-height:320px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:22px;
+  }
+
+  .finish-emoji{
+    font-size:2.1rem;
+    margin-bottom:10px;
+  }
+
+  .finish-title{
+    font-size:1.5rem;
+    font-weight:950;
+    margin-bottom:8px;
+  }
+
+  .finish-line{
+    color:var(--muted);
+    margin-bottom:16px;
+    max-width:420px;
+  }
+
+  .finish-score{
+    font-size:2rem;
+    font-weight:950;
+    line-height:1;
+    margin-bottom:8px;
+  }
+
+  .finish-sub{
+    color:var(--muted);
+    margin-bottom:18px;
+  }
+
+  .finish-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+</style>
+
+<div class="practice-pane active" id="flashPane">
+  <div class="practice-grid">
+    <section class="glass practice-card">
+      <div class="practice-head">
+        <div class="practice-head-left">
+          <div class="practice-title">Your Flashcards</div>
+          <div class="practice-sub">Review, filter, and master your flashcards — fast, focused, and organized.</div>
+        </div>
+        <div class="limit-chip" id="flashUsageChip">0 / 0 used</div>
+      </div>
+
+      <div class="upgrade-banner" id="flashUpgradeBanner">
+        <div class="upgrade-banner-title">Free plan limit reached</div>
+        <div class="upgrade-banner-sub" id="flashUpgradeText">
+          You’ve used all your free flashcards. Upgrade to keep building a bigger study set.
+        </div>
+        <div class="upgrade-banner-actions">
+          <a class="btn btn-primary" href="/settings">Upgrade in Settings</a>
+        </div>
+      </div>
+
+      <div class="flash-topbar">
+        <div class="flash-stat" id="flashCountStat">0 total</div>
+        <div class="flash-stat" id="pageCountStat">Page 0 of 0</div>
+
+        <select class="input flash-filter" id="flashClassFilter">
+          <option value="">All classes</option>
+        </select>
+      </div>
+
+      <div class="flash-list" id="flashList">
+        <div class="flash-empty">No flashcards yet. Make your first one on the right.</div>
+      </div>
+
+      <div class="pagination-bar" id="paginationBar" style="display:none;">
+        <div class="pagination-left" id="paginationInfo">Showing 0–0</div>
+        <div class="pagination-right" id="paginationButtons"></div>
+      </div>
+    </section>
+
+    <section class="glass practice-card">
+      <div class="practice-head">
+        <div class="practice-head-left">
+          <div class="practice-title">Create Flashcard</div>
+          <div class="create-topline">Front = question or prompt. Back = answer.</div>
+        </div>
+      </div>
+
+      <div class="create-stack">
+        <div class="limit-line" id="flashLimitLine">
+          Loading flashcard limit...
+        </div>
+
+        <div>
+          <div class="mini-title" style="margin-bottom:8px;">Class (optional)</div>
+          <select class="input" id="flashClass">
+            <option value="">No class</option>
+          </select>
+        </div>
+
+        <div class="quick-actions">
+          <div class="mini-title">Quick actions</div>
+          <div class="quick-btns">
+            <button class="btn" id="exampleBtn" type="button">Example</button>
+            <button class="btn" id="clearBtn" type="button">Clear</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="mini-title" style="margin-bottom:8px;">Front</div>
+          <textarea class="input" id="flashFront" placeholder="e.g., What is the difference between mitosis and meiosis?"></textarea>
+        </div>
+
+        <div>
+          <div class="mini-title" style="margin-bottom:8px;">Back</div>
+          <textarea class="input" id="flashBack" placeholder="e.g., Mitosis makes 2 identical cells; meiosis makes 4 non-identical gametes..."></textarea>
+        </div>
+
+        <div class="practice-message" id="flashMsg"></div>
+
+        <div style="display:flex; justify-content:flex-end;">
+          <button class="btn btn-primary" id="saveFlashBtn" type="button">Save Flashcard</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="practice-pane" id="quizPane">
+  <div class="quiz-grid">
+    <section class="glass practice-card">
+      <div class="practice-head">
+        <div class="practice-head-left">
+          <div class="practice-title">Quiz Mode</div>
+          <div class="practice-sub">Answer one card at a time, reveal when needed, and track your score properly.</div>
+        </div>
+      </div>
+
+      <div class="quiz-topbar">
+        <div class="flash-stat" id="quizDeckStat">0 cards</div>
+        <div class="flash-stat" id="quizModeStat">Ready</div>
+
+        <select class="input flash-filter" id="quizClassFilter">
+          <option value="">All classes</option>
+        </select>
+      </div>
+
+      <div class="quiz-shell">
+        <div class="quiz-stage active" id="quizEmptyStage">
+          <div class="quiz-empty" id="quizEmptyText">No flashcards available for quiz yet.</div>
+        </div>
+
+        <div class="quiz-stage" id="quizQuestionStage">
+          <div class="quiz-card-top">
+            <div>
+              <div class="quiz-question-label">Question</div>
+              <div class="quiz-question" id="quizQuestionText"></div>
+            </div>
+          </div>
+
+          <div class="quiz-meta">
+            <div class="quiz-badge" id="quizQuestionClass">No class</div>
+            <div class="quiz-badge" id="quizQuestionNumber">Card 1 of 1</div>
+          </div>
+
+          <div class="quiz-answer-block">
+            <div class="mini-title">Your answer</div>
+            <textarea class="input" id="quizAnswerInput" placeholder="Type your answer here..."></textarea>
+          </div>
+
+          <div class="quiz-result" id="quizResultBox"></div>
+
+          <div class="quiz-reveal" id="quizRevealBox">
+            <div class="quiz-reveal-label">Correct answer</div>
+            <div class="quiz-reveal-text" id="quizRevealText"></div>
+          </div>
+
+          <div class="quiz-actions">
+            <button class="btn btn-primary" id="quizCheckBtn" type="button">Check</button>
+            <button class="btn" id="quizRevealBtn" type="button">Reveal Answer</button>
+            <button class="btn" id="quizNextBtn" type="button">Next</button>
+          </div>
+        </div>
+
+        <div class="quiz-stage" id="quizFinishStage">
+          <div class="finish-wrap">
+            <div class="finish-emoji">🎉</div>
+            <div class="finish-title">Quiz Complete</div>
+            <div class="finish-line" id="finishLine">Nice work.</div>
+            <div class="finish-score" id="finishScore">0%</div>
+            <div class="finish-sub" id="finishSub">0 / 0 correct</div>
+
+            <div class="finish-actions">
+              <button class="btn btn-primary" id="restartQuizBtn" type="button">Restart Quiz</button>
+              <button class="btn" id="retryWrongBtn" type="button">Retry Wrong Cards</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="quiz-side">
+      <div class="glass quiz-side-card">
+        <div class="quiz-side-title">Session Stats</div>
+        <div class="practice-sub">This quiz updates live as you move through cards.</div>
+
+        <div class="quiz-stats">
+          <div class="quiz-stat">
+            <div class="quiz-stat-num" id="quizCorrectNum">0</div>
+            <div class="quiz-stat-label">Correct</div>
+          </div>
+
+          <div class="quiz-stat">
+            <div class="quiz-stat-num" id="quizWrongNum">0</div>
+            <div class="quiz-stat-label">Wrong</div>
+          </div>
+
+          <div class="quiz-stat">
+            <div class="quiz-stat-num" id="quizDoneNum">0</div>
+            <div class="quiz-stat-label">Answered</div>
+          </div>
+
+          <div class="quiz-stat">
+            <div class="quiz-stat-num" id="quizPercentNum">0%</div>
+            <div class="quiz-stat-label">Score</div>
+          </div>
+        </div>
+
+        <div class="quiz-progress">
+          <div class="quiz-progress-bar">
+            <div class="quiz-progress-fill" id="quizProgressFill"></div>
+          </div>
+          <div class="quiz-progress-line" id="quizProgressLine">0 of 0 finished</div>
+        </div>
+
+        <div class="xp-wrap">
+          <div class="xp-head">
+            <span>Practice XP</span>
+            <span id="practiceXpNum">0 XP</span>
+          </div>
+          <div class="quiz-progress-bar">
+            <div class="quiz-progress-fill" id="practiceXpFill"></div>
+          </div>
+          <div class="xp-line" id="practiceXpLine">Level 1 • 0 / 50 XP</div>
+          <div class="xp-gain" id="practiceXpGain">+5 XP</div>
+        </div>
+      </div>
+
+      <div class="glass quiz-side-card">
+        <div class="quiz-side-title">How it works</div>
+        <div class="practice-sub">
+          Type your answer, hit <strong>Check</strong>, and compare against the stored answer.
+          Use <strong>Reveal Answer</strong> when you get stuck.
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(async function(){
+  const $ = (id) => document.getElementById(id);
+
+  const PAGE_SIZE = 3;
+
+  let allClasses = [];
+  let allCards = [];
+  let filteredCards = [];
+  let currentPage = 1;
+
+  let quizPool = [];
+  let wrongCards = [];
+  let quizIndex = 0;
+  let currentQuizCard = null;
+  let quizAnswered = 0;
+  let quizCorrect = 0;
+  let quizCheckedCurrent = false;
+
+  let billingInfo = null;
+  let usageInfo = null;
+  let limitInfo = null;
+  let flashcardLimitReached = false;
+
+  let practiceXp = 0;
+  let practiceLevel = 1;
+  let editingFlashcardId = null;
+
+  function escapeHtml(s){
+    return String(s ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  async function api(url, options){
+    const res = await fetch(url, options);
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+
+    if (!ct.includes("application/json")){
+      const txt = await res.text();
+      throw new Error(txt || `Request failed (${res.status})`);
+    }
+
+    const data = await res.json();
+
+    if (!res.ok || data.ok === false){
+      throw new Error(data.error || `Request failed (${res.status})`);
+    }
+
+    return data;
+  }
+
+  function setMessage(msg, isError=false){
+    const el = $("flashMsg");
+    el.textContent = msg || "";
+    el.style.color = isError ? "#ffb4b4" : "var(--muted)";
+  }
+
+  function xpNeededForLevel(level){
+    level = Number(level || 1);
+    return Math.max(50, level * 50);
+  }
+
+  function renderPracticeXp(){
+    const need = xpNeededForLevel(practiceLevel);
+    const pct = Math.max(0, Math.min(100, Math.round((practiceXp / need) * 100)));
+
+    $("practiceXpNum").textContent = `${practiceXp} XP`;
+    $("practiceXpFill").style.width = `${pct}%`;
+    $("practiceXpLine").textContent = `Level ${practiceLevel} • ${practiceXp} / ${need} XP`;
+  }
+
+  function showXpGain(text){
+    const box = $("practiceXpGain");
+    box.textContent = text;
+    box.classList.remove("show");
+    void box.offsetWidth;
+    box.classList.add("show");
+
+    clearTimeout(showXpGain._timer);
+    showXpGain._timer = setTimeout(() => {
+      box.classList.remove("show");
+    }, 1800);
+  }
+
+  async function awardRecallXp(amount = 5){
+    try{
+      const data = await api("/api/recall/xp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount })
+      });
+
+      const xp = data.xp || {};
+      practiceXp = Number(xp.xp || 0);
+      practiceLevel = Number(xp.level || 1);
+      renderPracticeXp();
+
+      const gained = Number(xp.gain || amount || 0);
+      const leveledUp = Number(xp.leveled_up || 0);
+
+      if (leveledUp > 0){
+        showXpGain(`Level ${practiceLevel} • +${gained} XP`);
+      } else {
+        showXpGain(`+${gained} XP`);
+      }
+
+      return data;
+    }catch(err){
+      console.error(err);
+      return null;
+    }
+  }
+
+  function classNameFromId(classId){
+    if (!classId) return "No class";
+    const found = allClasses.find(c => String(c.id) === String(classId));
+    return found ? found.name : "No class";
+  }
+
+  function buildClassOptions(){
+    const createSelect = $("flashClass");
+    const filterSelect = $("flashClassFilter");
+    const quizFilter = $("quizClassFilter");
+
+    createSelect.innerHTML = `<option value="">No class</option>`;
+    filterSelect.innerHTML = `<option value="">All classes</option>`;
+    quizFilter.innerHTML = `<option value="">All classes</option>`;
+
+    for (const c of allClasses){
+      const opt1 = document.createElement("option");
+      opt1.value = c.id;
+      opt1.textContent = c.name;
+      createSelect.appendChild(opt1);
+
+      const opt2 = document.createElement("option");
+      opt2.value = c.id;
+      opt2.textContent = c.name;
+      filterSelect.appendChild(opt2);
+
+      const opt3 = document.createElement("option");
+      opt3.value = c.id;
+      opt3.textContent = c.name;
+      quizFilter.appendChild(opt3);
+    }
+  }
+
+  function applyPlanUi(){
+    const flashUsageChip = $("flashUsageChip");
+    const flashLimitLine = $("flashLimitLine");
+    const flashUpgradeBanner = $("flashUpgradeBanner");
+    const flashUpgradeText = $("flashUpgradeText");
+    const saveBtn = $("saveFlashBtn");
+
+    const used = Number((usageInfo && usageInfo.flashcards) || 0);
+    const limit = Number((limitInfo && limitInfo.flashcards) || 0);
+    const isPro = !!(billingInfo && billingInfo.is_pro);
+
+    flashUsageChip.textContent = `${used} / ${limit} used`;
+
+    if (isPro){
+      flashLimitLine.innerHTML = `<strong>Pro plan:</strong> build a much larger flashcard set without the free cap.`;
+      flashUpgradeBanner.classList.remove("show");
+      flashcardLimitReached = false;
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save Flashcard";
+      return;
+    }
+
+    flashLimitLine.innerHTML = `<strong>Free plan:</strong> ${used} of ${limit} flashcards used.`;
+
+if (limit > 0 && used >= limit){
+  flashcardLimitReached = true;
+  flashUpgradeBanner.classList.add("show");
+  flashUpgradeText.textContent = `You’ve used all ${limit} free flashcards. Upgrade to keep building a bigger study set.`;
+
+  if (editingFlashcardId){
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Update Flashcard";
+  } else {
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Free Limit Reached";
+  }
+} else {
+  flashcardLimitReached = false;
+  flashUpgradeBanner.classList.remove("show");
+  saveBtn.disabled = false;
+  saveBtn.textContent = editingFlashcardId ? "Update Flashcard" : "Save Flashcard";
+}
+  }
+
+  async function loadSettingsAndUsage(){
+    const data = await api("/api/settings");
+    billingInfo = data.billing || {};
+    usageInfo = data.usage || {};
+    limitInfo = data.limits || {};
+    applyPlanUi();
+
+    const todayStats = data.today_stats || {};
+    practiceXp = Number(todayStats.xp || 0);
+    practiceLevel = Number(todayStats.level || 1);
+    renderPracticeXp();
+  }
+
+  function applyFilter(){
+    const classFilter = $("flashClassFilter").value;
+
+    filteredCards = allCards.filter(card => {
+      if (!classFilter) return true;
+      return String(card.class_id || "") === String(classFilter);
+    });
+
+    currentPage = 1;
+    renderFlashcards();
+  }
+
+  function renderFlashcards(){
+    const list = $("flashList");
+    const paginationBar = $("paginationBar");
+    const paginationButtons = $("paginationButtons");
+    const paginationInfo = $("paginationInfo");
+    const flashCountStat = $("flashCountStat");
+    const pageCountStat = $("pageCountStat");
+
+    const total = filteredCards.length;
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    flashCountStat.textContent = `${total} total`;
+    pageCountStat.textContent = `Page ${total ? currentPage : 0} of ${total ? totalPages : 0}`;
+
+    list.innerHTML = "";
+
+    if (!total){
+      list.innerHTML = `<div class="flash-empty">No flashcards yet. Make your first one on the right.</div>`;
+      flashCountStat.textContent = `0 total`;
+      pageCountStat.textContent = `Page 0 of 0`;
+      paginationBar.style.display = "none";
+      return;
+    }
+
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
+    const pageItems = filteredCards.slice(start, end);
+
+    for (const card of pageItems){
+      const wrap = document.createElement("div");
+      wrap.className = "flash-card";
+
+      wrap.innerHTML = `
+        <div class="flash-card-top">
+          <div class="flash-card-meta">
+            <div class="flash-badge">${escapeHtml(classNameFromId(card.class_id))}</div>
+            <div class="flash-front">${escapeHtml(card.front)}</div>
+          </div>
+        </div>
+
+        <div class="flash-answer-wrap" id="answer-${card.id}">
+          <div class="flash-answer-label">Answer</div>
+          <div class="flash-answer">${escapeHtml(card.back)}</div>
+        </div>
+
+<div class="flash-actions">
+  <button class="btn" type="button" data-action="toggle" data-id="${card.id}">Show</button>
+  <button class="btn" type="button" data-action="edit" data-id="${card.id}">Edit</button>
+  <button class="btn" type="button" data-action="delete" data-id="${card.id}">Delete</button>
+</div>
+      `;
+
+      list.appendChild(wrap);
+    }
+
+    paginationBar.style.display = "flex";
+    paginationInfo.textContent = `Showing ${start + 1}–${Math.min(end, total)} of ${total}`;
+
+    paginationButtons.innerHTML = "";
+
+    const prev = document.createElement("button");
+    prev.className = "page-pill";
+    prev.textContent = "‹";
+    prev.disabled = currentPage === 1;
+    prev.style.opacity = currentPage === 1 ? ".45" : "1";
+    prev.onclick = () => {
+      if (currentPage > 1){
+        currentPage--;
+        renderFlashcards();
+      }
+    };
+    paginationButtons.appendChild(prev);
+
+    for (let i = 1; i <= totalPages; i++){
+      const b = document.createElement("button");
+      b.className = "page-pill" + (i === currentPage ? " active" : "");
+      b.textContent = i;
+      b.onclick = () => {
+        currentPage = i;
+        renderFlashcards();
+      };
+      paginationButtons.appendChild(b);
+    }
+
+    const next = document.createElement("button");
+    next.className = "page-pill";
+    next.textContent = "›";
+    next.disabled = currentPage === totalPages;
+    next.style.opacity = currentPage === totalPages ? ".45" : "1";
+    next.onclick = () => {
+      if (currentPage < totalPages){
+        currentPage++;
+        renderFlashcards();
+      }
+    };
+    paginationButtons.appendChild(next);
+  }
+
+  async function loadClasses(){
+    const data = await api("/api/classes");
+    allClasses = data.classes || [];
+    buildClassOptions();
+  }
+
+  async function loadFlashcards(){
+    const data = await api("/api/flashcards");
+    allCards = data.flashcards || [];
+    applyFilter();
+    rebuildQuizPool();
+  }
+
+  function rebuildQuizPool(sourceCards){
+    const classFilter = $("quizClassFilter").value;
+    const base = Array.isArray(sourceCards) ? sourceCards : allCards;
+
+    quizPool = base.filter(card => {
+      if (!classFilter) return true;
+      return String(card.class_id || "") === String(classFilter);
+    });
+
+    wrongCards = [];
+    quizIndex = 0;
+    currentQuizCard = null;
+    quizAnswered = 0;
+    quizCorrect = 0;
+    quizCheckedCurrent = false;
+
+    $("quizDeckStat").textContent = `${quizPool.length} cards`;
+    $("quizModeStat").textContent = quizPool.length ? "In progress" : "Ready";
+
+    updateQuizStats();
+    showQuizCard();
+  }
+
+  function updateQuizStats(){
+    const total = quizPool.length;
+    const wrong = Math.max(0, quizAnswered - quizCorrect);
+    const percent = quizAnswered > 0 ? Math.round((quizCorrect / quizAnswered) * 100) : 0;
+    const progressPercent = total > 0 ? Math.round((quizAnswered / total) * 100) : 0;
+
+    $("quizCorrectNum").textContent = quizCorrect;
+    $("quizWrongNum").textContent = wrong;
+    $("quizDoneNum").textContent = quizAnswered;
+    $("quizPercentNum").textContent = `${percent}%`;
+    $("quizProgressFill").style.width = `${progressPercent}%`;
+    $("quizProgressLine").textContent = `${quizAnswered} of ${total} finished`;
+  }
+
+  function setQuizStage(name){
+    $("quizEmptyStage").classList.remove("active");
+    $("quizQuestionStage").classList.remove("active");
+    $("quizFinishStage").classList.remove("active");
+
+    if (name === "empty") $("quizEmptyStage").classList.add("active");
+    if (name === "question") $("quizQuestionStage").classList.add("active");
+    if (name === "finish") $("quizFinishStage").classList.add("active");
+  }
+
+  function resetQuestionUi(){
+    $("quizAnswerInput").value = "";
+    $("quizResultBox").className = "quiz-result";
+    $("quizResultBox").style.display = "none";
+    $("quizResultBox").textContent = "";
+    $("quizRevealBox").classList.remove("open");
+    $("quizRevealText").textContent = "";
+    quizCheckedCurrent = false;
+  }
+
+  function showQuizCard(){
+    const total = quizPool.length;
+
+    if (!total){
+      $("quizEmptyText").textContent = "No flashcards here yet. Try another class or create one.";
+      setQuizStage("empty");
+      updateQuizStats();
+      return;
+    }
+
+    if (quizIndex >= total){
+      showFinishScreen();
+      return;
+    }
+
+    currentQuizCard = quizPool[quizIndex];
+    resetQuestionUi();
+
+    $("quizQuestionText").textContent = currentQuizCard.front || "";
+    $("quizQuestionClass").textContent = classNameFromId(currentQuizCard.class_id);
+    $("quizQuestionNumber").textContent = `Card ${quizIndex + 1} of ${total}`;
+    $("quizRevealText").textContent = currentQuizCard.back || "";
+
+    setQuizStage("question");
+    updateQuizStats();
+  }
+
+  function showFinishScreen(){
+    const total = quizPool.length;
+    const wrong = Math.max(0, quizAnswered - quizCorrect);
+    const percent = total > 0 ? Math.round((quizCorrect / total) * 100) : 0;
+
+    $("finishScore").textContent = `${percent}%`;
+    $("finishSub").textContent = `${quizCorrect} / ${total} correct`;
+
+    if (percent >= 90){
+      $("finishLine").textContent = "Excellent. You really know this set.";
+    } else if (percent >= 70){
+      $("finishLine").textContent = "Strong work. A quick review of the missed cards would help.";
+    } else if (percent >= 50){
+      $("finishLine").textContent = "Decent start. Go over the wrong cards again and tighten it up.";
+    } else {
+      $("finishLine").textContent = "You need another pass. Retry the wrong cards and lock them in.";
+    }
+
+    $("retryWrongBtn").style.display = wrong > 0 ? "inline-flex" : "none";
+    $("quizModeStat").textContent = "Finished";
+    setQuizStage("finish");
+    updateQuizStats();
+  }
+
+  function normalizeText(str){
+    return String(str || "")
+      .toLowerCase()
+      .replace(/[^\w\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function keywordStats(userAnswer, correctAnswer){
+    const userWords = normalizeText(userAnswer).split(" ").filter(Boolean);
+    const correctWords = normalizeText(correctAnswer).split(" ").filter(Boolean);
+
+    const userSet = new Set(userWords);
+    const correctSet = new Set(correctWords);
+
+    let overlap = 0;
+    for (const word of correctSet){
+      if (userSet.has(word)) overlap++;
+    }
+
+    return {
+      userCount: userWords.length,
+      correctCount: correctWords.length,
+      overlap,
+      coverage: correctSet.size ? overlap / correctSet.size : 0
+    };
+  }
+
+  function similarity(a, b){
+    const aa = normalizeText(a);
+    const bb = normalizeText(b);
+
+    if (!aa || !bb) return 0;
+    if (aa === bb) return 1;
+
+    const wa = aa.split(" ").filter(Boolean);
+    const wb = bb.split(" ").filter(Boolean);
+
+    const sa = new Set(wa);
+    const sb = new Set(wb);
+
+    let overlap = 0;
+    for (const word of sa){
+      if (sb.has(word)) overlap++;
+    }
+
+    const overlapScore = overlap / Math.max(1, sb.size);
+    const lengthScore = Math.min(aa.length, bb.length) / Math.max(aa.length, bb.length);
+
+    return (overlapScore * 0.8) + (lengthScore * 0.2);
+  }
+
+  async function markChecked(correct){
+    if (quizCheckedCurrent) return;
+
+    quizCheckedCurrent = true;
+    quizAnswered += 1;
+
+    if (correct){
+      quizCorrect += 1;
+      updateQuizStats();
+      await awardRecallXp(5);
+    } else if (currentQuizCard){
+      wrongCards.push(currentQuizCard);
+      updateQuizStats();
+    } else {
+      updateQuizStats();
+    }
+  }
+
+  $("flashClassFilter").addEventListener("change", applyFilter);
+
+  $("quizClassFilter").addEventListener("change", () => {
+    rebuildQuizPool();
+  });
+
+  $("flashList").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+
+    const id = btn.getAttribute("data-id");
+    const action = btn.getAttribute("data-action");
+
+    if (action === "toggle"){
+      const answer = $(`answer-${id}`);
+      const isOpen = answer.classList.contains("open");
+
+      answer.classList.toggle("open");
+      btn.textContent = isOpen ? "Show" : "Hide";
+      return;
+    }
+
+if (action === "edit"){
+  const card = allCards.find(c => String(c.id) === String(id));
+  if (!card) return;
+
+  editingFlashcardId = card.id;
+  $("flashFront").value = card.front || "";
+  $("flashBack").value = card.back || "";
+  $("flashClass").value = card.class_id ? String(card.class_id) : "";
+  $("saveFlashBtn").textContent = "Update Flashcard";
+  setMessage("Editing flashcard.");
+  applyPlanUi();
+  return;
+}
+
+    if (action === "delete"){
+      btn.disabled = true;
+      try{
+        await api(`/api/flashcards/${id}`, { method: "DELETE" });
+        setMessage("Flashcard deleted.");
+        await loadSettingsAndUsage();
+        await loadFlashcards();
+      }catch(err){
+        btn.disabled = false;
+        setMessage(err.message || "Delete failed.", true);
+      }
+    }
+  });
+
+  $("exampleBtn").onclick = () => {
+    $("flashFront").value = "What is the difference between mitosis and meiosis?";
+    $("flashBack").value = "Mitosis produces 2 identical daughter cells; meiosis produces 4 non-identical gametes.";
+    setMessage("");
+  };
+
+$("clearBtn").onclick = () => {
+  $("flashFront").value = "";
+  $("flashBack").value = "";
+  $("flashClass").value = "";
+  editingFlashcardId = null;
+  $("saveFlashBtn").textContent = "Save Flashcard";
+  setMessage("");
+  applyPlanUi();
+};
+
+$("saveFlashBtn").onclick = async () => {
+  if (flashcardLimitReached && !editingFlashcardId){
+    setMessage("Free flashcard limit reached. Upgrade in Settings to add more.", true);
+    return;
+  }
+
+  const front = $("flashFront").value.trim();
+  const back = $("flashBack").value.trim();
+  const classId = $("flashClass").value;
+
+  if (!front || !back){
+    setMessage("Front and back are required.", true);
+    return;
+  }
+
+  const payload = { front, back };
+  if (classId) payload.class_id = Number(classId);
+
+  const btn = $("saveFlashBtn");
+  btn.disabled = true;
+  const old = btn.textContent;
+  btn.textContent = editingFlashcardId ? "Updating…" : "Saving…";
+
+  try{
+    if (editingFlashcardId){
+      await api(`/api/flashcards/${editingFlashcardId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      setMessage("Flashcard updated.");
+      editingFlashcardId = null;
+      btn.textContent = "Save Flashcard";
+    } else {
+      await api("/api/flashcards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      setMessage("Flashcard saved.");
+    }
+
+    $("flashFront").value = "";
+    $("flashBack").value = "";
+    $("flashClass").value = "";
+
+    await loadSettingsAndUsage();
+    await loadFlashcards();
+
+    currentPage = Math.max(1, Math.ceil(filteredCards.length / PAGE_SIZE));
+    renderFlashcards();
+  }catch(err){
+    const message = err.message || "Save failed.";
+    if (message.toLowerCase().includes("limit reached")){
+      flashcardLimitReached = true;
+      await loadSettingsAndUsage();
+    }
+    setMessage(message, true);
+  }finally{
+   applyPlanUi();
+  }
+};
+
+  $("quizCheckBtn").onclick = async () => {
+    if (!currentQuizCard) return;
+
+    const userAnswer = $("quizAnswerInput").value.trim();
+    const correctAnswer = currentQuizCard.back || "";
+
+    if (!userAnswer){
+      $("quizResultBox").className = "quiz-result bad";
+      $("quizResultBox").style.display = "block";
+      $("quizResultBox").textContent = "Type an answer first.";
+      return;
+    }
+
+    if (quizCheckedCurrent){
+      return;
+    }
+
+    const score = similarity(userAnswer, correctAnswer);
+    const stats = keywordStats(userAnswer, correctAnswer);
+
+    const tooShort = stats.userCount < Math.max(3, Math.ceil(stats.correctCount * 0.35));
+    const weakCoverage = stats.coverage < 0.45;
+    const passed = !tooShort && !weakCoverage && score >= 0.72;
+
+    await markChecked(passed);
+
+    if (passed){
+      $("quizResultBox").className = "quiz-result ok";
+      $("quizResultBox").style.display = "block";
+      $("quizResultBox").textContent = "Nice — that looks correct.";
+    } else {
+      $("quizResultBox").className = "quiz-result bad";
+      $("quizResultBox").style.display = "block";
+      $("quizResultBox").textContent = "Not quite. Reveal the answer and compare.";
+    }
+  };
+
+  $("quizRevealBtn").onclick = () => {
+    if (!currentQuizCard) return;
+    $("quizRevealBox").classList.toggle("open");
+  };
+
+  $("quizNextBtn").onclick = () => {
+    if (!currentQuizCard) return;
+
+    if (!quizCheckedCurrent){
+      $("quizResultBox").className = "quiz-result bad";
+      $("quizResultBox").style.display = "block";
+      $("quizResultBox").textContent = "Check your answer first.";
+      return;
+    }
+
+    quizIndex += 1;
+    showQuizCard();
+  };
+
+  $("restartQuizBtn").onclick = () => {
+    rebuildQuizPool();
+  };
+
+  $("retryWrongBtn").onclick = () => {
+    if (!wrongCards.length){
+      rebuildQuizPool();
+      return;
+    }
+    rebuildQuizPool(wrongCards);
+  };
+
+  $("flashTabBtn").onclick = () => {
+    $("flashTabBtn").classList.add("active");
+    $("quizTabBtn").classList.remove("active");
+    $("flashPane").classList.add("active");
+    $("quizPane").classList.remove("active");
+  };
+
+  $("quizTabBtn").onclick = () => {
+    $("quizTabBtn").classList.add("active");
+    $("flashTabBtn").classList.remove("active");
+    $("quizPane").classList.add("active");
+    $("flashPane").classList.remove("active");
+    rebuildQuizPool();
+  };
+
+  try{
+    await loadSettingsAndUsage();
+    await loadClasses();
+    await loadFlashcards();
+  }catch(err){
+    $("flashList").innerHTML = `<div class="flash-empty">${escapeHtml(err.message || "Could not load flashcards.")}</div>`;
+    $("quizEmptyText").textContent = err.message || "Could not load quiz cards.";
+  }
+})();
+</script>
+
+{% endblock %}

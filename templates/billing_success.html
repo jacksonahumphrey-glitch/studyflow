@@ -1,0 +1,47 @@
+{% extends "app_shell.html" %}
+{% block content %}
+
+<header class="page-head glass">
+  <div>
+    <div class="page-title">Payment Successful</div>
+    <div class="page-sub">Your subscription is now active.</div>
+  </div>
+  <div class="pill">Pro Enabled</div>
+</header>
+
+<section class="glass" style="padding:24px;">
+  <h2 style="margin:0 0 10px 0;">You're in.</h2>
+  <p class="muted" style="margin:0 0 18px 0;">
+    Your payment method has been added and your Pro subscription has started.
+  </p>
+
+  <div style="display:grid; gap:12px; margin-bottom:18px;">
+    <div class="row">
+      <div class="row-left">
+        <div class="row-title">More room to work</div>
+        <div class="row-sub">Higher limits for classes, assignments, notes, flashcards, and quizzes.</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-left">
+        <div class="row-title">Smarter planning</div>
+        <div class="row-sub">Your daily plan can use the Pro planner with better ordering and built-in buffer time.</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="row-left">
+        <div class="row-title">Ready to go</div>
+        <div class="row-sub">Head to Settings to confirm your plan or go back to Today and start using it.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <a href="{{ url_for('today') }}" class="btn btn-primary" style="text-decoration:none;">Go to Today</a>
+    <a href="{{ url_for('settings_page') }}" class="btn" style="text-decoration:none;">Open Settings</a>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,917 @@
+{% extends "app_shell.html" %}
+{% block content %}
+<header class="page-head glass">
+  <div>
+    <div class="page-title">Resources</div>
+    <div class="page-sub">Notes</div>
+  </div>
+  <div class="pill" id="statusPill">Ready</div>
+</header>
+
+<style>
+  .resources-shell{
+    display:grid;
+    grid-template-columns: 1.02fr .98fr;
+    gap:20px;
+    align-items:start;
+  }
+
+  @media (max-width: 1080px){
+    .resources-shell{
+      grid-template-columns:1fr;
+    }
+  }
+
+  .resources-card{
+    padding:22px;
+    position:relative;
+    overflow:hidden;
+  }
+
+  .resources-card::before{
+    content:"";
+    position:absolute;
+    inset:-30% auto auto -18%;
+    width:220px;
+    height:220px;
+    background:radial-gradient(circle, rgba(120,200,200,.06), transparent 70%);
+    pointer-events:none;
+  }
+
+  .resources-card > *{
+    position:relative;
+    z-index:1;
+  }
+
+  .section-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:14px;
+    flex-wrap:wrap;
+  }
+
+  .section-title{
+    font-size:1.65rem;
+    font-weight:950;
+    line-height:1.02;
+    letter-spacing:-.02em;
+    margin:0;
+  }
+
+  .section-sub{
+    color:var(--muted);
+    margin-top:6px;
+    line-height:1.4;
+    max-width:520px;
+  }
+
+  .note-usage{
+    margin-bottom:16px;
+    padding:12px 14px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.04);
+    color:rgba(255,255,255,.88);
+    font-weight:800;
+  }
+
+  .compose-shell{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .compose-box{
+    border:1px solid rgba(255,255,255,.10);
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+    border-radius:22px;
+    padding:16px;
+  }
+
+  .compose-label{
+    font-size:.9rem;
+    color:var(--muted);
+    font-weight:800;
+    margin:0 0 8px 2px;
+  }
+
+  .field-hint{
+    color:var(--muted);
+    font-size:.88rem;
+    margin-top:8px;
+    line-height:1.35;
+  }
+
+  #noteTitle,
+  #noteFolder,
+  #noteBody{
+    background:rgba(255,255,255,.05) !important;
+    border:1px solid rgba(255,255,255,.12) !important;
+    color:rgba(255,255,255,.95) !important;
+    border-radius:16px !important;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);
+  }
+
+  #noteBody{
+    min-height:220px;
+    resize:vertical;
+  }
+
+  .editor-foot{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-top:14px;
+  }
+
+  .edit-line{
+    color:var(--muted);
+    font-size:.95rem;
+    font-weight:700;
+  }
+
+  .editor-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .library-top{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+
+  .library-chip{
+    padding:10px 14px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.05);
+    color:rgba(255,255,255,.9);
+    font-weight:800;
+    font-size:.95rem;
+  }
+
+  .library-empty{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    min-height:280px;
+    padding:28px;
+    border:1px dashed rgba(255,255,255,.12);
+    border-radius:22px;
+    background:rgba(255,255,255,.03);
+    color:var(--muted);
+    line-height:1.5;
+  }
+
+  .folder-card{
+    padding:16px;
+    border-radius:20px;
+    border:1px solid rgba(255,255,255,.10);
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+    box-shadow:0 10px 24px rgba(0,0,0,.10);
+  }
+
+  .folder-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  .folder-name{
+    font-size:1.05rem;
+    font-weight:950;
+    color:rgba(255,255,255,.97);
+  }
+
+  .folder-meta{
+    color:var(--muted);
+    font-size:.92rem;
+    margin-top:4px;
+  }
+
+  .folder-body{
+    margin-top:14px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .note-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    padding:14px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.04);
+  }
+
+  .note-main{
+    min-width:0;
+    flex:1;
+  }
+
+  .note-title{
+    font-weight:900;
+    font-size:1rem;
+    color:rgba(255,255,255,.96);
+    margin-bottom:5px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .note-preview{
+    color:var(--muted);
+    font-size:.93rem;
+    line-height:1.35;
+    margin-bottom:6px;
+  }
+
+  .note-date{
+    color:rgba(255,255,255,.55);
+    font-size:.82rem;
+    font-weight:700;
+  }
+
+  .note-actions{
+    display:flex;
+    gap:8px;
+    flex-shrink:0;
+    flex-wrap:wrap;
+  }
+
+  .pagination-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-top:14px;
+    flex-wrap:wrap;
+  }
+
+  .pagination-left{
+    color:var(--muted);
+    font-size:.95rem;
+  }
+
+  .pagination-right{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+
+  .page-pill{
+    min-width:42px;
+    height:42px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.05);
+    color:rgba(255,255,255,.92);
+    font-weight:900;
+    cursor:pointer;
+  }
+
+  .page-pill:hover{
+    background:rgba(255,255,255,.10);
+  }
+
+  .page-pill.active{
+    background:rgba(122,166,255,.16);
+    border-color:rgba(122,166,255,.28);
+  }
+
+  .page-pill[disabled]{
+    opacity:.45;
+    cursor:not-allowed;
+  }
+</style>
+
+<div class="resources-shell">
+  <section class="glass resources-card">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title" id="formTitle">Add Note</h2>
+        <div class="section-sub">Capture class notes, ideas, and study material in one clean place.</div>
+      </div>
+      <button class="btn" id="refreshBtn" type="button">Refresh</button>
+    </div>
+
+    <div class="note-usage" id="noteUsageLine">Study library ready.</div>
+
+    <div class="compose-shell">
+      <div class="compose-box">
+        <div class="compose-label">Title</div>
+        <input class="input" id="noteTitle" type="text" placeholder="e.g., Macbeth Act 2 Notes" maxlength="120">
+      </div>
+
+      <div class="compose-box">
+        <div class="compose-label">Folder</div>
+        <input class="input" id="noteFolder" type="text" placeholder="e.g., English" maxlength="40">
+        <div class="field-hint">Tip: Try folders like Math, English, Science, History.</div>
+      </div>
+
+      <div class="compose-box">
+        <div class="compose-label">Note</div>
+        <textarea class="input" id="noteBody" placeholder="Write your note..."></textarea>
+        <div class="field-hint" id="noteStats">0 characters • 0 words</div>
+      </div>
+
+<div class="editor-foot">
+  <div class="edit-line" id="editLine"></div>
+<div class="editor-actions">
+  <button class="btn" id="clearBtn" type="button">Clear</button>
+  <button class="btn" id="genFlashBtn" type="button">Generate Flashcards ⚡</button>
+  <button class="btn" id="goPracticeBtn" type="button">Go to Practice</button>
+  <button class="btn btn-primary" id="saveBtn" type="button">Save Note</button>
+</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="glass resources-card">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">Saved Notes</h2>
+        <div class="section-sub">Your study library, grouped by folder and sorted by newest first.</div>
+      </div>
+      <div class="pill" id="folderCount">0</div>
+    </div>
+
+    <div class="library-top">
+      <div class="library-chip" id="noteCountChip">0 notes</div>
+      <div class="library-chip" id="folderCountChip">0 folders</div>
+    </div>
+
+    <div id="folderList" class="stack">
+      <div class="library-empty">Loading your notes…</div>
+    </div>
+
+    <div class="pagination-bar" id="outerPaginationBar" style="display:none;">
+      <div class="pagination-left" id="outerPaginationInfo">Showing 0–0</div>
+      <div class="pagination-right" id="outerPaginationButtons"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+
+  const NOTES_PER_FOLDER_PAGE = 4;
+  const FOLDERS_PER_PAGE = 4;
+
+  let notes = [];
+  let editingId = null;
+  const openFolders = new Set();
+  const folderPages = {};
+  let outerFolderPage = 1;
+
+  function setStatus(text){
+    $("statusPill").textContent = text;
+  }
+
+function showStatus(text, isError = false){
+  const pill = $("statusPill");
+  pill.textContent = text;
+  pill.style.color = isError ? "#ffb4b4" : "";
+}
+
+  function escapeHtml(s){
+    return String(s ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function normFolder(s){
+    s = String(s || "").trim();
+    return s ? s : "General";
+  }
+
+  function formatWhen(v){
+    if (!v) return "";
+    try{
+      const d = new Date(v);
+      return d.toLocaleString(undefined, {
+        year:"numeric", month:"short", day:"2-digit",
+        hour:"2-digit", minute:"2-digit"
+      });
+    }catch(e){
+      return String(v);
+    }
+  }
+
+  function byNewest(a, b){
+    const ad = new Date(a.updated_at || a.created_at || 0).getTime();
+    const bd = new Date(b.updated_at || b.created_at || 0).getTime();
+    return bd - ad;
+  }
+
+  function updateNoteStats(){
+    const text = $("noteBody").value || "";
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    $("noteStats").textContent = `${text.length} characters • ${words} words`;
+  }
+
+  function suggestFolderFromTitle(){
+    const title = String($("noteTitle").value || "").toLowerCase().trim();
+    const folderInput = $("noteFolder");
+
+    if (!title || folderInput.value.trim()) return;
+
+    if (title.includes("math") || title.includes("algebra") || title.includes("geometry")){
+      folderInput.value = "Math";
+    } else if (title.includes("english") || title.includes("macbeth") || title.includes("essay")){
+      folderInput.value = "English";
+    } else if (title.includes("science") || title.includes("biology") || title.includes("chem") || title.includes("physics")){
+      folderInput.value = "Science";
+    } else if (title.includes("history") || title.includes("war") || title.includes("canada")){
+      folderInput.value = "History";
+    }
+  }
+
+  async function apiJson(url, options){
+    const res = await fetch(url, options);
+    let data = null;
+    try{
+      data = await res.json();
+    }catch(e){}
+
+    if (!res.ok){
+      const msg = (data && (data.error || data.message)) ? (data.error || data.message) : `HTTP ${res.status}`;
+      throw new Error(msg);
+    }
+
+    return data || {};
+  }
+
+  async function loadNotes(){
+    setStatus("Loading…");
+    try{
+      const data = await apiJson("/api/notes", { method:"GET" });
+
+      const arr =
+        Array.isArray(data) ? data :
+        Array.isArray(data.notes) ? data.notes :
+        Array.isArray(data.items) ? data.items :
+        [];
+
+      notes = arr.map(n => ({
+        id: n.id ?? n.note_id ?? n.uuid ?? n._id,
+        title: n.title ?? n.name ?? "",
+        folder: n.folder ?? n.tag ?? n.category ?? "General",
+        body: n.body ?? n.content ?? n.text ?? "",
+        created_at: n.created_at ?? n.created ?? n.createdAt,
+        updated_at: n.updated_at ?? n.updated ?? n.updatedAt
+      })).filter(n => n.id != null);
+
+      notes.sort(byNewest);
+      render();
+      setStatus("Ready");
+    }catch(e){
+      $("folderList").innerHTML = `<div class="library-empty">Couldn't load notes</div>`;
+      $("outerPaginationBar").style.display = "none";
+      setStatus("API error");
+      $("statusPill").title = e.message || "Notes API error";
+    }
+  }
+
+  function setEditing(note){
+    if (!note){
+      editingId = null;
+      $("formTitle").textContent = "Add Note";
+      $("noteTitle").value = "";
+      $("noteFolder").value = "";
+      $("noteBody").value = "";
+      const el = document.getElementById("editLine");
+if (el) el.textContent = "";
+      $("saveBtn").textContent = "Save Note";
+      $("saveBtn").disabled = false;
+      updateNoteStats();
+      setStatus("Ready");
+      return;
+    }
+
+    editingId = note.id;
+    $("formTitle").textContent = "Edit Note";
+    $("noteTitle").value = note.title || "";
+    $("noteFolder").value = note.folder || "General";
+    $("noteBody").value = note.body || "";
+    const el = document.getElementById("editLine");
+if (el) el.textContent = `Editing: ${note.title || "Untitled"} • ${note.folder || "General"}`;
+    updateNoteStats();
+    setStatus("Editing");
+  }
+
+  function clearForm(){
+    setEditing(null);
+  }
+
+async function createOrUpdate(){
+  const title = String($("noteTitle").value || "").trim();
+  const folder = normFolder($("noteFolder").value);
+  const body = String($("noteBody").value || "").trim();
+  const saveBtn = $("saveBtn");
+
+  if (!title){
+    setStatus("Add a title first");
+    return;
+  }
+
+  if (!body){
+    setStatus("Write something first");
+    return;
+  }
+
+  setStatus("Saving…");
+  saveBtn.textContent = "Saving...";
+  saveBtn.disabled = true;
+
+  const payload = JSON.stringify({ title, tag: folder, folder, body });
+
+  try{
+    if (editingId){
+      await apiJson(`/api/notes/${editingId}`, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: payload
+      });
+    }else{
+      await apiJson("/api/notes", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: payload
+      });
+    }
+
+    await loadNotes();
+    clearForm();
+    setStatus("Saved");
+    saveBtn.textContent = "Saved ✓";
+
+    setTimeout(() => {
+      saveBtn.textContent = "Save Note";
+      saveBtn.disabled = false;
+      setStatus("Ready");
+    }, 800);
+  }catch(e){
+    setStatus("API error");
+    $("statusPill").title = e.message || "Save failed";
+    saveBtn.textContent = "Save Note";
+    saveBtn.disabled = false;
+    setStatus("Error: " + (e.message || "Save failed"));
+  }
+}
+
+  async function deleteNote(noteId){
+    if (!noteId) return;
+
+    setStatus("Deleting…");
+    try{
+      await apiJson(`/api/notes/${noteId}`, { method:"DELETE" });
+      if (editingId === noteId) clearForm();
+      await loadNotes();
+      setStatus("Deleted");
+      setTimeout(() => setStatus("Ready"), 900);
+    }catch(e){
+      setStatus("API error");
+      $("statusPill").title = e.message || "Delete failed";
+      setStatus("Error: " + (e.message || "Delete failed"));
+    }
+  }
+
+  function toggleFolder(folder){
+    if (openFolders.has(folder)){
+      openFolders.delete(folder);
+    }else{
+      openFolders.add(folder);
+      if (!folderPages[folder]) folderPages[folder] = 1;
+    }
+    render();
+  }
+
+  function renderInnerPagination(container, folder, totalNotes){
+    const totalPages = Math.max(1, Math.ceil(totalNotes / NOTES_PER_FOLDER_PAGE));
+    const currentPage = Math.min(folderPages[folder] || 1, totalPages);
+    folderPages[folder] = currentPage;
+
+    const start = (currentPage - 1) * NOTES_PER_FOLDER_PAGE;
+    const end = Math.min(start + NOTES_PER_FOLDER_PAGE, totalNotes);
+
+    const bar = document.createElement("div");
+    bar.className = "pagination-bar";
+
+    const left = document.createElement("div");
+    left.className = "pagination-left";
+    left.textContent = `Showing ${start + 1}–${end} of ${totalNotes}`;
+
+    const right = document.createElement("div");
+    right.className = "pagination-right";
+
+    const prev = document.createElement("button");
+    prev.className = "page-pill";
+    prev.textContent = "‹";
+    prev.disabled = currentPage === 1;
+    prev.style.opacity = currentPage === 1 ? ".45" : "1";
+    prev.onclick = () => {
+      if (currentPage > 1){
+        folderPages[folder] = currentPage - 1;
+        render();
+      }
+    };
+    right.appendChild(prev);
+
+    for (let i = 1; i <= totalPages; i++){
+      const btn = document.createElement("button");
+      btn.className = "page-pill" + (i === currentPage ? " active" : "");
+      btn.textContent = i;
+      btn.onclick = () => {
+        folderPages[folder] = i;
+        render();
+      };
+      right.appendChild(btn);
+    }
+
+    const next = document.createElement("button");
+    next.className = "page-pill";
+    next.textContent = "›";
+    next.disabled = currentPage === totalPages;
+    next.style.opacity = currentPage === totalPages ? ".45" : "1";
+    next.onclick = () => {
+      if (currentPage < totalPages){
+        folderPages[folder] = currentPage + 1;
+        render();
+      }
+    };
+    right.appendChild(next);
+
+    bar.appendChild(left);
+    bar.appendChild(right);
+    container.appendChild(bar);
+  }
+
+  function renderOuterPagination(totalFolders){
+    const bar = $("outerPaginationBar");
+    const info = $("outerPaginationInfo");
+    const buttons = $("outerPaginationButtons");
+
+    const totalPages = Math.max(1, Math.ceil(totalFolders / FOLDERS_PER_PAGE));
+    if (outerFolderPage > totalPages) outerFolderPage = totalPages;
+
+    if (totalFolders <= FOLDERS_PER_PAGE){
+      bar.style.display = "none";
+      return;
+    }
+
+    const start = (outerFolderPage - 1) * FOLDERS_PER_PAGE;
+    const end = Math.min(start + FOLDERS_PER_PAGE, totalFolders);
+
+    bar.style.display = "flex";
+    info.textContent = `Showing folders ${start + 1}–${end} of ${totalFolders}`;
+    buttons.innerHTML = "";
+
+    const prev = document.createElement("button");
+    prev.className = "page-pill";
+    prev.textContent = "‹";
+    prev.disabled = outerFolderPage === 1;
+    prev.style.opacity = outerFolderPage === 1 ? ".45" : "1";
+    prev.onclick = () => {
+      if (outerFolderPage > 1){
+        outerFolderPage--;
+        render();
+      }
+    };
+    buttons.appendChild(prev);
+
+    for (let i = 1; i <= totalPages; i++){
+      const btn = document.createElement("button");
+      btn.className = "page-pill" + (i === outerFolderPage ? " active" : "");
+      btn.textContent = i;
+      btn.onclick = () => {
+        outerFolderPage = i;
+        render();
+      };
+      buttons.appendChild(btn);
+    }
+
+    const next = document.createElement("button");
+    next.className = "page-pill";
+    next.textContent = "›";
+    next.disabled = outerFolderPage === totalPages;
+    next.style.opacity = outerFolderPage === totalPages ? ".45" : "1";
+    next.onclick = () => {
+      if (outerFolderPage < totalPages){
+        outerFolderPage++;
+        render();
+      }
+    };
+    buttons.appendChild(next);
+  }
+
+  function render(){
+    notes.sort(byNewest);
+
+    const groups = {};
+    for (const n of notes){
+      const f = normFolder(n.folder);
+      if (!groups[f]) groups[f] = [];
+      groups[f].push(n);
+    }
+
+    const folders = Object.keys(groups).sort((a, b) => a.localeCompare(b));
+
+    $("folderCount").textContent = String(folders.length);
+    $("folderCountChip").textContent = `${folders.length} folder${folders.length === 1 ? "" : "s"}`;
+    $("noteCountChip").textContent = `${notes.length} note${notes.length === 1 ? "" : "s"}`;
+    $("noteUsageLine").textContent = `${notes.length} saved note${notes.length === 1 ? "" : "s"} across ${folders.length} folder${folders.length === 1 ? "" : "s"}.`;
+
+    const wrap = $("folderList");
+    wrap.innerHTML = "";
+
+    if (!folders.length){
+      wrap.innerHTML = `<div class="library-empty">No notes yet.<br>Save your first note on the left to start building your study library.</div>`;
+      $("outerPaginationBar").style.display = "none";
+      return;
+    }
+
+    const outerTotalPages = Math.max(1, Math.ceil(folders.length / FOLDERS_PER_PAGE));
+    if (outerFolderPage > outerTotalPages) outerFolderPage = outerTotalPages;
+
+    const outerStart = (outerFolderPage - 1) * FOLDERS_PER_PAGE;
+    const visibleFolders = folders.slice(outerStart, outerStart + FOLDERS_PER_PAGE);
+
+    for (const folder of visibleFolders){
+      const folderNotes = (groups[folder] || []).slice().sort(byNewest);
+      const isOpen = openFolders.has(folder);
+
+      if (!folderPages[folder]) folderPages[folder] = 1;
+      const totalInnerPages = Math.max(1, Math.ceil(folderNotes.length / NOTES_PER_FOLDER_PAGE));
+      if (folderPages[folder] > totalInnerPages) folderPages[folder] = totalInnerPages;
+
+      const currentInnerPage = folderPages[folder];
+      const innerStart = (currentInnerPage - 1) * NOTES_PER_FOLDER_PAGE;
+      const pageNotes = folderNotes.slice(innerStart, innerStart + NOTES_PER_FOLDER_PAGE);
+
+      const card = document.createElement("div");
+      card.className = "folder-card";
+
+      card.innerHTML = `
+        <div class="folder-head">
+          <div>
+            <div class="folder-name">${escapeHtml(folder)}</div>
+            <div class="folder-meta">${folderNotes.length} note${folderNotes.length === 1 ? "" : "s"}</div>
+          </div>
+          <button class="btn" type="button" data-folder="${escapeHtml(folder)}">${isOpen ? "Hide" : "Show"}</button>
+        </div>
+
+        <div class="folder-body" data-folder-body="${escapeHtml(folder)}" style="${isOpen ? "" : "display:none;"}"></div>
+      `;
+
+      wrap.appendChild(card);
+
+      card.querySelector('button[data-folder]').onclick = () => toggleFolder(folder);
+
+      const body = card.querySelector(`[data-folder-body="${CSS.escape(folder)}"]`);
+      body.innerHTML = "";
+
+      if (!isOpen) continue;
+
+      if (!pageNotes.length){
+        body.innerHTML = `<div class="library-empty" style="min-height:120px;">No notes in this folder yet.</div>`;
+        continue;
+      }
+
+      for (const n of pageNotes){
+        const preview = String(n.body || "").slice(0, 60);
+        const more = String(n.body || "").length > 60 ? "…" : "";
+
+        const item = document.createElement("div");
+        item.className = "note-item";
+        item.innerHTML = `
+          <div class="note-main">
+            <div class="note-title">${escapeHtml(n.title || "Untitled")}</div>
+            <div class="note-preview">${escapeHtml(preview)}${more}</div>
+            <div class="note-date">${formatWhen(n.updated_at || n.created_at) ? escapeHtml(formatWhen(n.updated_at || n.created_at)) : ""}</div>
+          </div>
+          <div class="note-actions">
+            <button class="btn" type="button" data-edit="${escapeHtml(String(n.id))}">Edit</button>
+            <button class="btn" type="button" data-del="${escapeHtml(String(n.id))}">Delete</button>
+          </div>
+        `;
+        body.appendChild(item);
+
+        item.querySelector(`[data-edit="${CSS.escape(String(n.id))}"]`).onclick = () => setEditing(n);
+        item.querySelector(`[data-del="${CSS.escape(String(n.id))}"]`).onclick = () => deleteNote(n.id);
+      }
+
+      if (folderNotes.length > NOTES_PER_FOLDER_PAGE){
+        renderInnerPagination(body, folder, folderNotes.length);
+      }
+    }
+
+    renderOuterPagination(folders.length);
+  }
+
+  $("saveBtn").onclick = createOrUpdate;
+
+$("genFlashBtn").onclick = async () => {
+  const btn = $("genFlashBtn");
+  btn.disabled = true;
+  const text = $("noteBody").value.trim();
+
+if (!text){
+  setStatus("Write a note first");
+  btn.disabled = false;
+  return;
+}
+
+  showStatus("Generating flashcards...");
+
+  try{
+    const res = await fetch("/api/generate_flashcards", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text })
+    });
+
+   let data = {};
+try {
+  data = await res.json();
+} catch (e) {
+  throw new Error("Server error (not JSON)");
+}
+    if (!res.ok) throw new Error(data.error || "Failed");
+
+    let savedCount = 0;
+    let failedMessage = "";
+
+    for (const card of (data.flashcards || [])) {
+      const saveRes = await fetch("/api/flashcards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          front: card.front,
+          back: card.back
+        })
+      });
+
+      const saveData = await saveRes.json().catch(() => ({}));
+
+      if (!saveRes.ok){
+        failedMessage = saveData.error || "Some flashcards could not be saved";
+        break;
+      }
+
+      savedCount++;
+    }
+
+    if (savedCount > 0 && failedMessage){
+      showStatus(`${savedCount} flashcards saved • ${failedMessage}`, true);
+    } else if (savedCount > 0){
+      showStatus(`⚡ ${savedCount} flashcards created successfully`);
+    } else {
+      throw new Error(failedMessage || "No flashcards were saved");
+    }
+
+setTimeout(() => {
+  window.location.href = "/active-recall";
+}, 1200);
+}catch(e){
+  showStatus("Error: " + (e.message || "Failed"), true);
+} finally {
+  btn.disabled = false;
+}
+};
+  $("clearBtn").onclick = clearForm;
+  $("refreshBtn").onclick = loadNotes;
+  $("noteBody").addEventListener("input", updateNoteStats);
+  $("noteTitle").addEventListener("blur", suggestFolderFromTitle);
+
+$("goPracticeBtn").onclick = () => {
+  window.location.href = "/active-recall";
+};
+
+setStatus("Ready");
+updateNoteStats();
+loadNotes();
+
+})();
+
+</script>
+{% endblock %}

@@ -1,0 +1,817 @@
+{% extends "app_shell.html" %}
+{% block content %}
+<header class="page-head glass">
+  <div>
+    <div class="page-title">Inputs</div>
+    <div class="page-sub">Classes & assignments</div>
+  </div>
+  <div class="pill" id="welcomeLine">Hi</div>
+</header>
+
+<style>
+  .inputs-banner{
+    margin-bottom:18px;
+    padding:14px 16px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.04);
+    color:rgba(255,255,255,.92);
+    font-weight:800;
+    line-height:1.45;
+  }
+
+  .inputs-banner.pro{
+    border-color:rgba(120,200,200,.24);
+    background:rgba(120,200,200,.10);
+  }
+
+  .inputs-topbar{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+
+  .inputs-stat{
+    padding:10px 14px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.05);
+    color:rgba(255,255,255,.88);
+    font-weight:800;
+    font-size:.95rem;
+  }
+
+  .usage-strip{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-bottom:18px;
+  }
+
+  @media (max-width: 900px){
+    .usage-strip{
+      grid-template-columns:1fr;
+    }
+  }
+
+  .usage-card{
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.04);
+    border-radius:16px;
+    padding:14px;
+  }
+
+  .usage-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:8px;
+  }
+
+  .usage-name{
+    font-weight:900;
+    font-size:15px;
+  }
+
+  .usage-num{
+    font-size:13px;
+    opacity:.82;
+    font-weight:800;
+  }
+
+  .usage-bar{
+    width:100%;
+    height:10px;
+    border-radius:999px;
+    background:rgba(255,255,255,.08);
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.06);
+  }
+
+  .usage-fill{
+    height:100%;
+    width:0%;
+    border-radius:999px;
+    background:linear-gradient(90deg, rgba(122,166,255,.65), rgba(120,200,200,.80));
+    transition:width .2s ease;
+  }
+
+  .usage-note{
+    margin-top:8px;
+    font-size:13px;
+    opacity:.74;
+  }
+
+  .mini-banner{
+    margin-top:12px;
+    padding:12px 14px;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.04);
+    color:rgba(255,255,255,.88);
+    font-weight:800;
+    line-height:1.4;
+  }
+
+  .pagination-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-top:16px;
+    flex-wrap:wrap;
+  }
+
+  .pagination-left{
+    color:var(--muted);
+    font-size:.95rem;
+  }
+
+  .pagination-right{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+
+  .page-pill{
+    min-width:42px;
+    height:42px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.05);
+    color:rgba(255,255,255,.92);
+    font-weight:900;
+    cursor:pointer;
+  }
+
+  .page-pill:hover{
+    background:rgba(255,255,255,.10);
+  }
+
+  .page-pill.active{
+    background:rgba(122,166,255,.16);
+    border-color:rgba(122,166,255,.28);
+  }
+
+  .page-pill[disabled]{
+    opacity:.45;
+    cursor:not-allowed;
+  }
+</style>
+
+<div id="planBanner" class="inputs-banner">Loading plan info...</div>
+
+<div class="usage-strip">
+  <div class="usage-card">
+    <div class="usage-head">
+      <div class="usage-name">Classes</div>
+      <div class="usage-num" id="usageClassesNum">0 / 0</div>
+    </div>
+    <div class="usage-bar"><div class="usage-fill" id="usageClassesFill"></div></div>
+    <div class="usage-note" id="usageClassesNote">Loading...</div>
+  </div>
+
+  <div class="usage-card">
+    <div class="usage-head">
+      <div class="usage-name">Open Assignments</div>
+      <div class="usage-num" id="usageAssignmentsNum">0 / 0</div>
+    </div>
+    <div class="usage-bar"><div class="usage-fill" id="usageAssignmentsFill"></div></div>
+    <div class="usage-note" id="usageAssignmentsNote">Loading...</div>
+  </div>
+</div>
+
+<div class="grid two">
+  <!-- LEFT: CLASSES -->
+  <section class="glass" style="padding:22px;">
+    <div class="card-head" style="margin-bottom:12px;">
+      <div>
+        <h2>Class</h2>
+        <div class="muted">Name</div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <input class="input" id="className" placeholder="e.g., Functions" autocomplete="off">
+      <button class="btn btn-primary" id="addClassBtn" type="button">Add</button>
+    </div>
+
+    <div class="muted" id="classMsg" style="margin-top:10px;"></div>
+
+    <div class="mini-banner" id="classLimitLine">Loading class limit...</div>
+
+    <div class="divider" style="margin:16px 0;"></div>
+
+    <div class="mini-title" style="margin-bottom:10px;">Classes</div>
+
+    <div class="inputs-topbar">
+      <div class="inputs-stat" id="classCountStat">0 total</div>
+      <div class="inputs-stat" id="classPageStat">Page 0 of 0</div>
+    </div>
+
+    <div id="classList" class="stack">
+      <div class="empty">Loading…</div>
+    </div>
+
+    <div class="pagination-bar" id="classPaginationBar" style="display:none;">
+      <div class="pagination-left" id="classPaginationInfo">Showing 0–0</div>
+      <div class="pagination-right" id="classPaginationButtons"></div>
+    </div>
+  </section>
+
+  <!-- RIGHT: ASSIGNMENTS -->
+  <section class="glass" style="padding:22px;">
+    <div class="card-head" style="margin-bottom:12px;">
+      <div>
+        <h2>Assignment</h2>
+        <div class="muted">Title • Due • Time • Priority</div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <select class="input" id="assignClass">
+        <option value="">No class</option>
+      </select>
+      <input class="input" id="assignTitle" placeholder="Title" autocomplete="off">
+    </div>
+
+    <div class="form-row" style="margin-top:10px;">
+      <input class="input" id="assignDue" type="date">
+      <input class="input" id="assignMins" type="number" min="1" step="5" value="30" inputmode="numeric">
+      <button class="btn btn-primary" id="addAssignBtn" type="button">Add</button>
+    </div>
+
+    <div class="form-row" style="margin-top:10px;">
+      <select class="input" id="assignPriority">
+        <option value="normal">Normal priority</option>
+        <option value="high">High priority</option>
+        <option value="low">Low priority</option>
+      </select>
+
+      <select class="input" id="assignType">
+        <option value="">General task type</option>
+        <option value="homework">Homework</option>
+        <option value="quiz">Quiz</option>
+        <option value="test">Test</option>
+        <option value="exam">Exam</option>
+        <option value="essay">Essay</option>
+        <option value="project">Project</option>
+        <option value="presentation">Presentation</option>
+        <option value="study">Study</option>
+      </select>
+    </div>
+
+    <div class="muted" id="assignMsg" style="margin-top:10px;"></div>
+
+    <div class="mini-banner" id="assignLimitLine">Loading assignment limit...</div>
+
+    <div class="divider" style="margin:16px 0;"></div>
+
+    <div class="mini-title" style="margin-bottom:10px;">Open</div>
+
+    <div class="inputs-topbar">
+      <div class="inputs-stat" id="assignCountStat">0 total</div>
+      <div class="inputs-stat" id="assignPageStat">Page 0 of 0</div>
+    </div>
+
+    <div id="assignList" class="stack">
+      <div class="empty">Loading…</div>
+    </div>
+
+    <div class="pagination-bar" id="assignPaginationBar" style="display:none;">
+      <div class="pagination-left" id="assignPaginationInfo">Showing 0–0</div>
+      <div class="pagination-right" id="assignPaginationButtons"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(async function(){
+  const $ = (id) => document.getElementById(id);
+
+  const CLASS_PAGE_SIZE = 5;
+  const ASSIGN_PAGE_SIZE = 4;
+
+  let allClasses = [];
+  let allAssignments = [];
+  let currentClassPage = 1;
+  let currentAssignPage = 1;
+  let settingsData = null;
+  let usageInfo = {};
+  let limitsInfo = {};
+  let billingInfo = {};
+
+  function escapeHtml(s){
+    return String(s ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function isoToday(){
+    const d = new Date();
+    return d.toISOString().split("T")[0];
+  }
+
+  async function tryRequest(url, options){
+    const res = await fetch(url, options);
+
+    if (res.ok) {
+      const ct = (res.headers.get("content-type") || "").toLowerCase();
+      if (ct.includes("application/json")) {
+        try { return await res.json(); } catch { return {}; }
+      }
+      return {};
+    }
+
+    try{
+      const ct = (res.headers.get("content-type") || "").toLowerCase();
+      if (ct.includes("application/json")){
+        const j = await res.json();
+        throw new Error(j.error || j.message || `HTTP ${res.status}`);
+      }
+      const t = await res.text();
+      throw new Error(t || `HTTP ${res.status}`);
+    } catch(e){
+      throw new Error(e.message || `HTTP ${res.status}`);
+    }
+  }
+
+  async function robustDelete(kind, id){
+    const tries = [];
+
+    if (kind === "class"){
+      tries.push({ url: `/api/classes/${id}`, options: { method: "DELETE" } });
+    }
+
+    if (kind === "assignment"){
+      tries.push({ url: `/api/assignments/${id}`, options: { method: "DELETE" } });
+    }
+
+    let lastErr = null;
+    for (const t of tries){
+      try{
+        await tryRequest(t.url, t.options);
+        return true;
+      }catch(e){
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error("Delete failed");
+  }
+
+  function isProPlan(){
+    const status = String((billingInfo && billingInfo.status) || "free").toLowerCase();
+    return status === "active" || status === "trialing";
+  }
+
+  function setUsageCard(key, used, limit){
+    const safeUsed = Number(used || 0);
+    const safeLimit = Number(limit || 0);
+    const pct = safeLimit > 0 ? Math.min(100, Math.round((safeUsed / safeLimit) * 100)) : 0;
+
+    const numEl = $(`usage${key}Num`);
+    const fillEl = $(`usage${key}Fill`);
+    const noteEl = $(`usage${key}Note`);
+
+    if (numEl) numEl.textContent = `${safeUsed} / ${safeLimit}`;
+    if (fillEl) fillEl.style.width = `${pct}%`;
+
+    if (noteEl){
+      if (safeLimit <= 0){
+        noteEl.textContent = "No limit data.";
+      } else if (safeUsed >= safeLimit){
+        noteEl.textContent = "Limit reached.";
+      } else if (pct >= 80){
+        noteEl.textContent = "You’re close to the limit.";
+      } else {
+        noteEl.textContent = `${safeLimit - safeUsed} remaining.`;
+      }
+    }
+  }
+
+  function renderTopUsage(){
+    setUsageCard("Classes", usageInfo.classes, limitsInfo.classes);
+    setUsageCard("Assignments", usageInfo.assignments, limitsInfo.assignments);
+
+    const classesUsed = Number(usageInfo.classes || 0);
+    const classesMax = Number(limitsInfo.classes || 0);
+    const assignmentsUsed = Number(usageInfo.assignments || 0);
+    const assignmentsMax = Number(limitsInfo.assignments || 0);
+
+    $("classLimitLine").textContent =
+      classesUsed >= classesMax
+        ? `Class limit reached: ${classesUsed}/${classesMax}. Delete one or upgrade.`
+        : `Class space: ${classesUsed}/${classesMax} used • ${classesMax - classesUsed} remaining.`;
+
+    $("assignLimitLine").textContent =
+      assignmentsUsed >= assignmentsMax
+        ? `Assignment limit reached: ${assignmentsUsed}/${assignmentsMax}. Finish/delete one or upgrade.`
+        : `Assignment space: ${assignmentsUsed}/${assignmentsMax} used • ${assignmentsMax - assignmentsUsed} remaining.`;
+
+    const planBanner = $("planBanner");
+    if (isProPlan()){
+      planBanner.className = "inputs-banner pro";
+      planBanner.textContent =
+        `Pro plan active • ${classesUsed}/${classesMax} classes used • ${assignmentsUsed}/${assignmentsMax} open assignments used.`;
+    } else {
+      planBanner.className = "inputs-banner";
+      planBanner.textContent =
+        `Free plan • ${classesUsed}/${classesMax} classes used • ${assignmentsUsed}/${assignmentsMax} open assignments used. Upgrade when you want real room to grow.`;
+    }
+
+    $("addClassBtn").disabled = classesUsed >= classesMax;
+    $("addAssignBtn").disabled = assignmentsUsed >= assignmentsMax;
+  }
+
+  async function loadSettingsSummary(){
+    try{
+      settingsData = await tryRequest("/api/settings");
+      const name = settingsData?.profile?.name || "there";
+      $("welcomeLine").textContent = `Hi, ${name}`;
+      usageInfo = settingsData.usage || {};
+      limitsInfo = settingsData.limits || {};
+      billingInfo = settingsData.billing || {};
+      renderTopUsage();
+    }catch{
+      $("welcomeLine").textContent = "Hi";
+    }
+  }
+
+  $("assignDue").value = isoToday();
+
+  function nicePriority(priority){
+    const p = String(priority || "normal").toLowerCase();
+    return p.charAt(0).toUpperCase() + p.slice(1);
+  }
+
+  function renderClassPagination(total){
+    const totalPages = Math.max(1, Math.ceil(total / CLASS_PAGE_SIZE));
+    if (currentClassPage > totalPages) currentClassPage = totalPages;
+
+    $("classCountStat").textContent = `${total} total`;
+    $("classPageStat").textContent = total ? `Page ${currentClassPage} of ${totalPages}` : `Page 0 of 0`;
+
+    const bar = $("classPaginationBar");
+    const info = $("classPaginationInfo");
+    const buttons = $("classPaginationButtons");
+
+    buttons.innerHTML = "";
+
+    if (!total){
+      bar.style.display = "none";
+      return;
+    }
+
+    bar.style.display = "flex";
+
+    const start = (currentClassPage - 1) * CLASS_PAGE_SIZE;
+    const end = Math.min(start + CLASS_PAGE_SIZE, total);
+    info.textContent = `Showing ${start + 1}–${end} of ${total}`;
+
+    const prev = document.createElement("button");
+    prev.className = "page-pill";
+    prev.textContent = "‹";
+    prev.disabled = currentClassPage === 1;
+    prev.style.opacity = currentClassPage === 1 ? ".45" : "1";
+    prev.onclick = () => {
+      if (currentClassPage > 1){
+        currentClassPage--;
+        renderClasses();
+      }
+    };
+    buttons.appendChild(prev);
+
+    for (let i = 1; i <= totalPages; i++){
+      const b = document.createElement("button");
+      b.className = "page-pill" + (i === currentClassPage ? " active" : "");
+      b.textContent = i;
+      b.onclick = () => {
+        currentClassPage = i;
+        renderClasses();
+      };
+      buttons.appendChild(b);
+    }
+
+    const next = document.createElement("button");
+    next.className = "page-pill";
+    next.textContent = "›";
+    next.disabled = currentClassPage === totalPages;
+    next.style.opacity = currentClassPage === totalPages ? ".45" : "1";
+    next.onclick = () => {
+      if (currentClassPage < totalPages){
+        currentClassPage++;
+        renderClasses();
+      }
+    };
+    buttons.appendChild(next);
+  }
+
+  function renderAssignPagination(total){
+    const totalPages = Math.max(1, Math.ceil(total / ASSIGN_PAGE_SIZE));
+    if (currentAssignPage > totalPages) currentAssignPage = totalPages;
+
+    $("assignCountStat").textContent = `${total} total`;
+    $("assignPageStat").textContent = total ? `Page ${currentAssignPage} of ${totalPages}` : `Page 0 of 0`;
+
+    const bar = $("assignPaginationBar");
+    const info = $("assignPaginationInfo");
+    const buttons = $("assignPaginationButtons");
+
+    buttons.innerHTML = "";
+
+    if (!total){
+      bar.style.display = "none";
+      return;
+    }
+
+    bar.style.display = "flex";
+
+    const start = (currentAssignPage - 1) * ASSIGN_PAGE_SIZE;
+    const end = Math.min(start + ASSIGN_PAGE_SIZE, total);
+    info.textContent = `Showing ${start + 1}–${end} of ${total}`;
+
+    const prev = document.createElement("button");
+    prev.className = "page-pill";
+    prev.textContent = "‹";
+    prev.disabled = currentAssignPage === 1;
+    prev.style.opacity = currentAssignPage === 1 ? ".45" : "1";
+    prev.onclick = () => {
+      if (currentAssignPage > 1){
+        currentAssignPage--;
+        renderAssignments();
+      }
+    };
+    buttons.appendChild(prev);
+
+    for (let i = 1; i <= totalPages; i++){
+      const b = document.createElement("button");
+      b.className = "page-pill" + (i === currentAssignPage ? " active" : "");
+      b.textContent = i;
+      b.onclick = () => {
+        currentAssignPage = i;
+        renderAssignments();
+      };
+      buttons.appendChild(b);
+    }
+
+    const next = document.createElement("button");
+    next.className = "page-pill";
+    next.textContent = "›";
+    next.disabled = currentAssignPage === totalPages;
+    next.style.opacity = currentAssignPage === totalPages ? ".45" : "1";
+    next.onclick = () => {
+      if (currentAssignPage < totalPages){
+        currentAssignPage++;
+        renderAssignments();
+      }
+    };
+    buttons.appendChild(next);
+  }
+
+  function renderClasses(){
+    const list = $("classList");
+    const sel = $("assignClass");
+
+    sel.innerHTML = `<option value="">No class</option>`;
+
+    for (const c of allClasses){
+      const opt = document.createElement("option");
+      opt.value = c.id;
+      opt.textContent = c.name;
+      sel.appendChild(opt);
+    }
+
+    list.innerHTML = "";
+
+    if (!allClasses.length){
+      list.innerHTML = `<div class="empty">No classes yet. Add one above to start organizing your work.</div>`;
+      renderClassPagination(0);
+      return;
+    }
+
+    renderClassPagination(allClasses.length);
+
+    const start = (currentClassPage - 1) * CLASS_PAGE_SIZE;
+    const pageItems = allClasses.slice(start, start + CLASS_PAGE_SIZE);
+
+    for (const c of pageItems){
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML = `
+        <div class="row-left">
+          <div class="row-title">${escapeHtml(c.name)}</div>
+          <div class="row-sub">Class</div>
+        </div>
+        <button class="btn" type="button">Delete</button>
+      `;
+
+      row.querySelector("button").onclick = async () => {
+        row.style.opacity = "0.5";
+        row.style.pointerEvents = "none";
+        try{
+          await robustDelete("class", c.id);
+          $("classMsg").textContent = "";
+          await refreshEverything();
+        }catch(e){
+          row.style.opacity = "1";
+          row.style.pointerEvents = "auto";
+          $("classMsg").textContent = e.message || "Delete failed.";
+        }
+      };
+
+      list.appendChild(row);
+    }
+  }
+
+  function renderAssignments(){
+    const list = $("assignList");
+    list.innerHTML = "";
+
+    const open = allAssignments.filter(a => a.status === "open");
+
+    if (!open.length){
+      list.innerHTML = `<div class="empty">No assignments yet. Add one above to build your plan.</div>`;
+      renderAssignPagination(0);
+      return;
+    }
+
+    renderAssignPagination(open.length);
+
+    const start = (currentAssignPage - 1) * ASSIGN_PAGE_SIZE;
+    const pageItems = open.slice(start, start + ASSIGN_PAGE_SIZE);
+
+    for (const a of pageItems){
+      const bits = [];
+      if (a.class_name) bits.push(escapeHtml(a.class_name));
+      bits.push(a.due_date ? `Due ${a.due_date}` : "No due");
+      bits.push(`${a.minutes}m`);
+      bits.push(`${nicePriority(a.priority)} priority`);
+      if (a.task_type) bits.push(escapeHtml(a.task_type));
+
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML = `
+        <div class="row-left">
+          <div class="row-title">${escapeHtml(a.title)}</div>
+          <div class="row-sub">${bits.join(" • ")}</div>
+        </div>
+        <button class="btn" type="button">Delete</button>
+      `;
+
+      row.querySelector("button").onclick = async () => {
+        row.style.opacity = "0.5";
+        row.style.pointerEvents = "none";
+        try{
+          await robustDelete("assignment", a.id);
+          $("assignMsg").textContent = "";
+          await refreshEverything();
+        }catch(e){
+          row.style.opacity = "1";
+          row.style.pointerEvents = "auto";
+          $("assignMsg").textContent = e.message || "Delete failed.";
+        }
+      };
+
+      list.appendChild(row);
+    }
+  }
+
+  async function loadClasses(){
+    $("classList").innerHTML = `<div class="empty">Loading…</div>`;
+    const data = await tryRequest("/api/classes");
+    allClasses = data.classes || [];
+
+    const totalPages = Math.max(1, Math.ceil(allClasses.length / CLASS_PAGE_SIZE));
+    if (currentClassPage > totalPages) currentClassPage = totalPages;
+
+    renderClasses();
+  }
+
+  async function loadAssignments(){
+    $("assignList").innerHTML = `<div class="empty">Loading…</div>`;
+    const data = await tryRequest("/api/assignments");
+    allAssignments = data.assignments || [];
+
+    const open = allAssignments.filter(a => a.status === "open");
+    const totalPages = Math.max(1, Math.ceil(open.length / ASSIGN_PAGE_SIZE));
+    if (currentAssignPage > totalPages) currentAssignPage = totalPages;
+
+    renderAssignments();
+  }
+
+  async function refreshEverything(){
+    await loadSettingsSummary();
+    await loadClasses();
+    await loadAssignments();
+  }
+
+  $("addClassBtn").onclick = async () => {
+    const name = $("className").value.trim();
+    $("classMsg").textContent = "";
+
+    if (!name){
+      $("classMsg").textContent = "Enter a class name.";
+      return;
+    }
+
+    if ($("addClassBtn").disabled){
+      $("classMsg").textContent = "You hit your class limit.";
+      return;
+    }
+
+    try{
+      await tryRequest("/api/classes", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ name })
+      });
+
+      $("className").value = "";
+      $("classMsg").textContent = "Class added.";
+      await refreshEverything();
+
+      currentClassPage = Math.max(1, Math.ceil(allClasses.length / CLASS_PAGE_SIZE));
+      renderClasses();
+    }catch(e){
+      const msg = (e.message || "").toLowerCase();
+      if (msg.includes("exist")){
+        $("classMsg").textContent = "That class already exists.";
+      }else{
+        $("classMsg").textContent = e.message || "Add failed.";
+      }
+    }
+  };
+
+  $("addAssignBtn").onclick = async () => {
+    const title = $("assignTitle").value.trim();
+    const mins = Number($("assignMins").value || 0);
+    const due = $("assignDue").value;
+    const classId = $("assignClass").value || null;
+    const priority = $("assignPriority").value || "normal";
+    const taskType = $("assignType").value || "";
+
+    $("assignMsg").textContent = "";
+
+    if (!title){
+      $("assignMsg").textContent = "Enter a title.";
+      return;
+    }
+    if (mins <= 0){
+      $("assignMsg").textContent = "Minutes must be greater than 0.";
+      return;
+    }
+
+    if ($("addAssignBtn").disabled){
+      $("assignMsg").textContent = "You hit your assignment limit.";
+      return;
+    }
+
+    try{
+      const payload = {
+        title,
+        due_date: due,
+        minutes: mins,
+        priority,
+        task_type: taskType
+      };
+
+      if (classId) payload.class_id = Number(classId);
+
+      await tryRequest("/api/assignments", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      $("assignTitle").value = "";
+      $("assignMins").value = "30";
+      $("assignPriority").value = "normal";
+      $("assignType").value = "";
+      $("assignMsg").textContent = "Assignment added.";
+      await refreshEverything();
+
+      const open = allAssignments.filter(a => a.status === "open");
+      currentAssignPage = Math.max(1, Math.ceil(open.length / ASSIGN_PAGE_SIZE));
+      renderAssignments();
+    }catch(e){
+      $("assignMsg").textContent = e.message || "Add failed.";
+    }
+  };
+
+  try{
+    await refreshEverything();
+  }catch(e){
+    $("classList").innerHTML = `<div class="empty">Couldn't load</div>`;
+    $("assignList").innerHTML = `<div class="empty">Couldn't load</div>`;
+    $("planBanner").textContent = "Couldn’t load plan info.";
+  }
+})();
+</script>
+{% endblock %}

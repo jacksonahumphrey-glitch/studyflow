@@ -1,0 +1,82 @@
+{# templates/base.html #}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ app_name or "StudyFlow" }}</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+
+<body>
+  <div class="app-shell">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar card">
+
+      <div class="brand">
+        <div class="brand-left">
+          <div class="brand-icon">📦</div>
+          <div>
+            <div class="brand-name">{{ app_name or "StudyFlow" }}</div>
+            <div class="brand-sub">Focus • Plan • Execute</div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="nav">
+
+        <a class="nav-item {% if request.endpoint=='today' %}active{% endif %}"
+           href="{{ url_for('today') }}">
+          <span class="nav-key">T</span>
+          <span>Today</span>
+        </a>
+
+        <a class="nav-item {% if request.endpoint=='inputs' %}active{% endif %}"
+           href="{{ url_for('inputs') }}">
+          <span class="nav-key">I</span>
+          <span>Inputs</span>
+        </a>
+
+        <a class="nav-item {% if request.endpoint=='resources' %}active{% endif %}"
+           href="{{ url_for('resources') }}">
+          <span class="nav-key">R</span>
+          <span>Resources</span>
+        </a>
+
+        <a class="nav-item {% if request.endpoint=='active_recall' %}active{% endif %}"
+           href="{{ url_for('active_recall') }}">
+          <span class="nav-key">A</span>
+          <span>Active Recall</span>
+        </a>
+
+        <a class="nav-item {% if request.endpoint=='settings_page' %}active{% endif %}"
+           href="{{ url_for('settings_page') }}">
+          <span class="nav-key">S</span>
+          <span>Settings</span>
+        </a>
+
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-divider"></div>
+
+        <a class="logout-btn" href="{{ url_for('logout') }}">
+          <span class="nav-key">↩</span>
+          <span>Logout</span>
+        </a>
+
+        <div class="sidebar-footnote">Local-first.</div>
+      </div>
+
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+      {% block content %}{% endblock %}
+    </main>
+
+  </div>
+</body>
+</html>

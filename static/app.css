@@ -1,0 +1,739 @@
+/* =========================================================
+   StudyFlow — app.css (SINGLE SOURCE)
+   - Auth pages scoped to body.auth
+   - App shell layout + sidebar (open + collapsed)
+   - Reusable UI system (cards/buttons/inputs/rows)
+   ========================================================= */
+
+/* ---------- Theme tokens ---------- */
+:root{
+  --bg0:#070b14;
+  --bg1:#0b1220;
+
+  --card: rgba(255,255,255,.06);
+  --card2: rgba(255,255,255,.04);
+  --border: rgba(255,255,255,.12);
+
+  --text:#e7eeff;
+  --muted: rgba(231,238,255,.70);
+
+  --accent:#80d9df;
+  --accent2: rgba(128,217,223,.16);
+
+  --shadow: 0 26px 70px rgba(0,0,0,.55);
+  --r:22px;
+
+  --sb-open: 300px;
+  --sb-collapsed: 92px;
+}
+
+/* ---------- Global reset ---------- */
+*{ box-sizing:border-box; }
+html{ min-height:100%; font-size:18px; }
+body{
+  min-height:100vh;
+  margin:0;
+  font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(1400px 1000px at 30% 20%, rgba(128,217,223,.14), transparent 55%),
+    radial-gradient(1200px 900px at 70% 50%, rgba(99,140,255,.12), transparent 58%),
+    linear-gradient(180deg,var(--bg0),var(--bg1));
+  background-repeat:no-repeat;
+  background-size:cover;
+  overflow-x:hidden;
+}
+
+/* =========================================================
+   AUTH PAGES — SCOPED (login/signup/forgot)
+   only applies when <body class="auth">
+   ========================================================= */
+body.auth{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+}
+
+body.auth .center{
+  width:100%;
+  display:grid;
+  place-items:center;
+  padding:36px 18px;
+}
+
+body.auth .auth-wrap{
+  width:min(820px, 96vw);
+}
+
+body.auth .card{
+  border-radius:24px;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.06);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow:
+    0 24px 80px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(255,255,255,.06);
+  overflow:hidden;
+}
+
+body.auth .card-inner{ padding:28px 28px 22px; }
+
+body.auth .brand{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  padding:22px 26px;
+  border-radius:22px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+  margin-bottom:18px;
+}
+
+body.auth .logo-box{
+  width:66px;
+  height:66px;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.20);
+  display:grid;
+  place-items:center;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+  flex:0 0 auto;
+  overflow:hidden;
+}
+body.auth .logo-box img{
+  width:44px;
+  height:44px;
+  object-fit:contain;
+  display:block;
+}
+
+body.auth .brand > div{
+  flex:1 1 auto;
+  min-width:0;
+  text-align:right;
+}
+body.auth .brand h1{
+  margin:0;
+  font-size:56px;
+  line-height:1;
+  letter-spacing:-.02em;
+  font-weight:900;
+  white-space:nowrap;
+}
+body.auth .brand .sub{
+  margin-top:8px;
+  font-size:22px;
+  font-weight:650;
+  color: rgba(232,239,255,.70);
+  white-space:nowrap;
+}
+
+body.auth .form{ display:grid; gap:14px; }
+body.auth .field{ display:grid; gap:8px; }
+body.auth .label{
+  font-size:18px;
+  color:rgba(232,239,255,.78);
+  font-weight:650;
+}
+body.auth .input{
+  width:100%;
+  padding:16px 16px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(0,0,0,.24);
+  color:#e8efff;
+  outline:none;
+  font-size:16px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+body.auth .input::placeholder{ color:rgba(232,239,255,.35); }
+body.auth .input:focus{
+  border-color: rgba(120,165,255,.45);
+  box-shadow: 0 0 0 4px rgba(70,120,255,.18), inset 0 1px 0 rgba(255,255,255,.06);
+}
+body.auth .btn{
+  width:100%;
+  padding:16px 16px;
+  border-radius:16px;
+  border:1px solid rgba(130,170,255,.30);
+  background: linear-gradient(180deg, rgba(80,140,255,.22), rgba(40,90,170,.18));
+  color:#e8efff;
+  font-weight:800;
+  font-size:16px;
+  cursor:pointer;
+  margin-top:6px;
+  box-shadow:
+    0 10px 28px rgba(0,0,0,.35),
+    inset 0 1px 0 rgba(255,255,255,.12);
+}
+body.auth .btn:hover{ filter:brightness(1.06); }
+
+body.auth .helper{
+  margin-top:12px;
+  color:rgba(232,239,255,.58);
+  font-size:18px;
+  line-height:1.35;
+}
+body.auth .helper a{
+  color:rgba(140,190,255,.95);
+  text-decoration:none;
+}
+body.auth .helper a:hover{ text-decoration:underline; }
+
+body.auth .alert{
+  margin:14px 0 16px;
+  padding:14px 16px;
+  border-radius:14px;
+  border:1px solid rgba(255,85,105,.35);
+  background:rgba(255,55,85,.12);
+  color:#ffd7df;
+}
+
+@media (max-width:520px){
+  body.auth .brand{ padding:18px 18px; border-radius:20px; }
+  body.auth .logo-box{ width:56px; height:56px; border-radius:16px; }
+  body.auth .logo-box img{ width:38px; height:38px; }
+  body.auth .brand h1{ font-size:40px; }
+  body.auth .brand .sub{ font-size:18px; }
+  body.auth .card-inner{ padding:22px 18px 18px; }
+}
+
+/* =========================================================
+   APP SHELL LAYOUT
+   ========================================================= */
+.app{
+  min-height:100vh;
+  display:grid;
+  grid-template-columns: 360px 1fr;
+  gap:22px;
+  padding:24px;
+  align-items:start;
+}
+.main{ min-width:0; padding:0; }
+.content{
+  width:100%;
+  max-width:1180px;
+  margin:0 auto;
+  padding-bottom:40px;
+}
+
+/* =========================================================
+   SIDEBAR (OPEN)
+   ========================================================= */
+.sidebar{
+  position:sticky;
+  top:24px;
+  height: calc(100vh - 48px);
+  padding:18px;
+  border-radius: var(--r);
+  border:1px solid var(--border);
+  background: var(--card2);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow);
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  overflow:hidden;
+}
+
+.side-top{ display:flex; flex-direction:column; gap:16px; }
+.side-bottom{ margin-top:auto; display:flex; flex-direction:column; gap:12px; }
+
+.brand-card{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px;
+  border-radius: 18px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+}
+
+.brand-left{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+}
+
+.brand-icon{
+  width:44px; height:44px;
+  border-radius: 14px;
+  display:grid;
+  place-items:center;
+  background: rgba(0,0,0,.28);
+  border:1px solid rgba(255,255,255,.12);
+  flex:0 0 auto;
+  overflow:hidden;
+}
+.brand-icon img{
+  width:28px;
+  height:28px;
+  display:block;
+}
+
+.brand-meta{
+  min-width:0;
+  padding-right:86px;   /* gives the hamburger more breathing room */
+}
+.brand-name{
+  font-weight:900;
+  font-size:1.15rem;
+  line-height:1.1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.brand-tag{
+  margin-top:3px;
+  font-size:.9rem;
+  color: var(--muted);
+  white-space:nowrap;
+  line-height:1.2;
+}
+
+/* icon buttons */
+.icon-btn{
+  width:42px;
+  height:42px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.05);
+  color:var(--text);
+  cursor:pointer;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  transition:.15s;
+  flex:0 0 auto;
+
+  padding:0;
+}
+
+.icon-btn svg{
+  width:18px;
+  height:18px;
+  display:block;
+}
+.icon-btn:hover{ background: rgba(255,255,255,.09); }
+.icon-btn svg{ display:block; }
+
+/* ✅ Perfect vertical center when OPEN */
+.brand-card #collapseBtn.icon-btn{
+  position:absolute;
+  right:14px;
+  top:50%;
+  transform: translateY(calc(-50% + 1px));
+}
+
+/* nav */
+.nav{ display:flex; flex-direction:column; gap:10px; }
+
+.nav-link{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 12px;
+  border-radius:16px;
+  text-decoration:none;
+  color:var(--text);
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.03);
+  transition:.15s;
+  min-width:0;
+}
+.nav-link:hover{
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.16);
+}
+.nav-link.active{
+  background: rgba(255,255,255,.09);
+  border-color: rgba(255,255,255,.20);
+}
+.nav-ico{
+  width:36px; height:36px;
+  border-radius: 14px;
+  display:grid;
+  place-items:center;
+  background: rgba(0,0,0,.22);
+  border:1px solid rgba(255,255,255,.10);
+  font-weight:900;
+  flex:0 0 auto;
+}
+.nav-text{
+  font-weight:850;
+  font-size:1.02rem;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  min-width:0;
+}
+.nav-link.danger{ opacity:.92; }
+
+.tip{
+  font-size:.92rem;
+  color: var(--muted);
+  padding: 0 6px;
+}
+
+.divider{
+  height:1px;
+  background: rgba(255,255,255,.10);
+  margin: 10px 0;
+}
+
+/* =========================================================
+   SIDEBAR (COLLAPSED)
+   ========================================================= */
+.app.is-collapsed{
+  grid-template-columns: var(--sb-collapsed) 1fr;
+}
+
+.app.is-collapsed .sidebar{
+  padding:14px;
+}
+
+/* stack logo + hamburger */
+.app.is-collapsed .brand-card{
+  padding:14px;
+  display:grid;
+  grid-template-rows: auto auto;
+  justify-items:center;
+  align-items:center;
+  gap:10px;
+}
+
+.app.is-collapsed .brand-left{
+  width:100%;
+  display:grid;
+  place-items:center;
+  gap:0;
+}
+
+.app.is-collapsed .brand-meta{ display:none !important; }
+
+.app.is-collapsed .brand-icon{
+  width:48px;
+  height:48px;
+  border-radius:18px;
+  display:grid;
+  place-items:center;
+
+  padding:0 !important;
+  line-height:0 !important;
+  overflow:hidden;
+}
+
+/* ✅ hamburger becomes normal centered block */
+.app.is-collapsed .brand-card #collapseBtn.icon-btn{
+  position:static !important;
+  transform: translateX(-8px) !important;
+  width:44px;
+  height:44px;
+  border-radius:16px;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:0 !important;
+  line-height:0 !important;
+}
+.app.is-collapsed .brand-icon{
+  transform: translateX(-8px) !important;
+}
+.app.is-collapsed .brand-card #collapseBtn.icon-btn svg{
+  display:block !important;
+  margin:0 !important;
+}
+
+/* icon-only nav */
+.app.is-collapsed .nav-link{
+  justify-content:center;
+  padding:10px;
+}
+.app.is-collapsed .nav-text{ display:none !important; }
+.app.is-collapsed .tip{ display:none !important; }
+
+/* =========================================================
+   REUSABLE UI
+   ========================================================= */
+.glass{
+  background: var(--card);
+  border:1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+}
+
+.page-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+  padding:22px 24px;
+  margin-bottom:18px;
+  min-width:0;
+}
+
+.page-title{
+  font-size:2rem;
+  font-weight:950;
+  letter-spacing:-.3px;
+  line-height:1.05;
+}
+.page-sub{
+  margin-top:6px;
+  color: var(--muted);
+  font-size:1rem;
+}
+
+.pill{
+  max-width: 45%;
+  padding:10px 12px;
+  border-radius: 999px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05);
+  color: rgba(231,238,255,.85);
+  font-weight:800;
+  font-size:.95rem;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.grid{ display:grid; gap:18px; min-width:0; }
+.grid.two{ grid-template-columns: 1fr 1fr; min-width:0; }
+
+.card-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:14px;
+  min-width:0;
+}
+
+h2{ margin:0; font-size:1.22rem; font-weight:950; }
+.muted{ color: var(--muted); font-size: .96rem; }
+
+.stack{ display:grid; gap:12px; }
+
+.btn{
+  padding:12px 14px;
+  border-radius: 14px;
+  border:1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  font-weight:900;
+  cursor:pointer;
+  transition:.15s;
+  white-space:nowrap;
+}
+.btn:hover{ background: rgba(255,255,255,.10); }
+.btn-primary{
+  border-color: rgba(128,217,223,.38);
+  background: linear-gradient(180deg, rgba(128,217,223,.30), rgba(128,217,223,.12));
+}
+
+.input, select.input, textarea.input{
+  width:100%;
+  padding:12px 12px;
+  border-radius: 14px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.22);
+  color: var(--text);
+  outline:none;
+  font-size: 1rem;
+  min-width:0;
+}
+.input:focus{
+  border-color: rgba(128,217,223,.55);
+  box-shadow: 0 0 0 5px rgba(128,217,223,.14);
+}
+
+.form-row{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  min-width:0;
+  flex-wrap:wrap;
+}
+.form-row > *{ flex:1; min-width: 200px; }
+.form-row .btn{ flex:0 0 auto; min-width:auto; }
+
+.row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px;
+  border-radius: 18px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+  min-width:0;
+}
+.row-left{ min-width:0; }
+.row-title{
+  font-weight:950;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width: 52ch;
+}
+.row-sub{
+  margin-top:4px;
+  color: var(--muted);
+  font-size:.92rem;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width: 70ch;
+}
+
+.empty{ color: var(--muted); padding: 10px 2px; }
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media(max-width:1100px){
+  html{ font-size:17px; }
+  .app{ grid-template-columns: 1fr; }
+  .sidebar{ position:relative; top:auto; height:auto; }
+  .grid.two{ grid-template-columns: 1fr; }
+  .pill{ max-width: 100%; }
+}
+/* =========================================================
+   OVERRIDES (keep this section ONCE at the bottom)
+   ========================================================= */
+
+/* ---------- Sidebar brand row (OPEN) ---------- */
+.brand-card{
+  position:relative;
+}
+
+.brand-meta{
+  padding-right: 96px; /* gives room so tagline doesn't crash into hamburger */
+}
+
+.brand-tag{
+  white-space:nowrap;
+  overflow:visible;
+  text-overflow:clip;
+}
+
+/* keep burger perfectly centered in its box */
+#collapseBtn.icon-btn{
+  display:grid;
+  place-items:center;
+  padding:0;
+  line-height:0;
+}
+#collapseBtn.icon-btn svg{
+  display:block;
+  margin:0;
+}
+
+/* ---------- Sidebar brand stack (COLLAPSED) ---------- */
+.app.is-collapsed .brand-card{
+  display:grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto;
+  justify-items:center;
+  align-items:center;
+  gap:10px;
+}
+
+.app.is-collapsed .brand-left{
+  display:grid;
+  place-items:center;
+}
+
+.app.is-collapsed .brand-icon,
+.app.is-collapsed #collapseBtn{
+  transform: translateX(-8px); /* your desired offset */
+}
+
+/* ---------- Active Recall: "Your Flashcards" header clamp ---------- */
+/* This fixes the select spilling out of the card */
+.card-head,
+.card-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.card-head > *,
+.card-header > *{
+  min-width:0;
+}
+
+/* clamp the dropdown width */
+/* ---------- Active Recall dropdown fix ---------- */
+.card-head,
+.card-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.card-head > *,
+.card-header > *{
+  min-width:0;
+}
+
+/* make selects stay inside the box */
+.card-head select,
+.card-header select,
+select.input{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  flex:0 1 220px;
+  box-sizing:border-box;
+}
+
+/* left text block can shrink */
+.card-head > div:first-child,
+.card-header > div:first-child{
+  flex:1 1 0;
+  min-width:0;
+}
+
+/* specifically keep Active Recall list area from stretching */
+#fcList,
+#quizList,
+.stack{
+  min-width:0;
+  width:100%;
+}
+/* Active Recall dropdown stays inside the card */
+
+
+/* Header row can wrap if needed */
+.card-head {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Prevent the title area from pushing the dropdown */
+.card-head > div {
+  min-width: 0;
+}
+
+/* Ensure the flashcard list never stretches the container */
+#fcList {
+  width: 100%;
+  overflow: hidden;
+}
