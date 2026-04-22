@@ -1,5 +1,7 @@
 # app.py — StudyFlow (FULL, UPDATED FREE/PRO LIMITS)
 
+import psycopg2
+import psycopg2.extras
 import os
 import re
 import json
@@ -2231,7 +2233,7 @@ def api_classes_create():
                 (user_id, name, now_iso()),
             )
             conn.commit()
-        except sqlite3.IntegrityError:
+        except Exception:
             return jsonify({"ok": False, "error": "That class already exists."}), 400
 
         return jsonify({"ok": True, "class": {"id": int(cur.lastrowid), "name": name}})
