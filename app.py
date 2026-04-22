@@ -61,6 +61,9 @@ def _env(k: str, default: str = "") -> str:
 
 
 DB_PATH = os.path.join(BASE_DIR, "studyflow.db")
+DATABASE_URL = _env("DATABASE_URL", "")
+USE_POSTGRES = bool(DATABASE_URL)
+
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -185,7 +188,83 @@ def contains_banned_word(text):
 # ---------------------------
 # DB helpers
 # ---------------------------
-def db() -> sqlite3.Connection:
+POSTGRES_INSERT_ID_TABLES = {
+    "users",
+    "classes",
+    "assignments",
+    "events",
+    "notes",
+    "flashcards",
+    "quizzes",
+}
+
+
+class PGResult:
+    def __init__(self, cursor, lastrowid=None):
+        self.cursor = cursor
+        self.lastrowid = lastrowid
+
+    def fetchone(self):
+        return self.cursor.fetchone()
+
+    def fetchall(self):
+        return self.cursor.fetchall()
+
+
+class PGConnection:
+    def __init__(self, dsn: str):
+        self.conn = psycopg2.connect(dsn, cursor_factory=psycopg2.extras.RealDictCursor)
+        self.conn.autocommit = False
+
+    def execute(self, query: str, params=()):
+        q = query.strip()
+        q_upper = q.upper()
+
+        # SQLite -> Postgres compatibility fixes
+        q = q.replace(" COLLATE NOCASE", "")
+        q = q.replace("?", "%s")
+
+        # SQLite upsert used by daily_plan
+        if q_upper.startswith("INSERT OR REPLACE INTO DAILY_PLAN"):
+            q = """
+            INSERT INTO daily_plan(user_id, day, payload_json, created_at)
+            VALUES(%s, %s, %s, %s)
+            ON CONFLICT (user_id, day)
+            DO UPDATE SET
+                payload_json = EXCLUDED.payload_json,
+                created_at = EXCLUDED.created_at
+            """
+
+        wants_returning_id = False
+        for table in POSTGRES_INSERT_ID_TABLES:
+            pattern = rf"^\s*INSERT\s+INTO\s+{table}\b"
+            if re.match(pattern, q, flags=re.IGNORECASE) and "RETURNING" not in q.upper():
+                q = q.rstrip() + " RETURNING id"
+                wants_returning_id = True
+                break
+
+        cur = self.conn.cursor()
+        cur.execute(q, params or ())
+
+        lastrowid = None
+        if wants_returning_id:
+            row = cur.fetchone()
+            if row and "id" in row:
+                lastrowid = int(row["id"])
+
+        return PGResult(cur, lastrowid=lastrowid)
+
+    def commit(self):
+        self.conn.commit()
+
+    def close(self):
+        self.conn.close()
+
+
+def db():
+    if USE_POSTGRES:
+        return PGConnection(DATABASE_URL)
+
     conn = sqlite3.connect(DB_PATH, timeout=8, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
@@ -194,7 +273,20 @@ def db() -> sqlite3.Connection:
     return conn
 
 
-def _table_exists(conn: sqlite3.Connection, table: str) -> bool:
+def _table_exists(conn, table: str) -> bool:
+    if USE_POSTGRES:
+        row = conn.execute(
+            """
+            SELECT EXISTS (
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_schema='public' AND table_name=%s
+            ) AS exists
+            """,
+            (table,),
+        ).fetchone()
+        return bool(row["exists"]) if row else False
+
     row = conn.execute(
         "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
         (table,),
@@ -202,7 +294,22 @@ def _table_exists(conn: sqlite3.Connection, table: str) -> bool:
     return bool(row)
 
 
-def _column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
+def _column_exists(conn, table: str, column: str) -> bool:
+    if USE_POSTGRES:
+        row = conn.execute(
+            """
+            SELECT EXISTS (
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_schema='public'
+                  AND table_name=%s
+                  AND column_name=%s
+            ) AS exists
+            """,
+            (table, column),
+        ).fetchone()
+        return bool(row["exists"]) if row else False
+
     if not _table_exists(conn, table):
         return False
     rows = conn.execute(f"PRAGMA table_info({table});").fetchall()
@@ -210,15 +317,182 @@ def _column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
     return column in cols
 
 
-def _notes_text_cols(conn: sqlite3.Connection) -> Tuple[bool, bool]:
+def _notes_text_cols(conn) -> Tuple[bool, bool]:
+    if USE_POSTGRES:
+        rows = conn.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema='public' AND table_name='notes'
+            """
+        ).fetchall()
+        cols = {r["column_name"] for r in rows}
+        return ("body" in cols), ("content" in cols)
+
     cols = {r["name"] for r in conn.execute("PRAGMA table_info(notes);").fetchall()}
     return ("body" in cols), ("content" in cols)
-
 
 def ensure_schema() -> None:
     conn = db()
     try:
-        # users
+        if USE_POSTGRES:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    email TEXT NOT NULL UNIQUE,
+                    name TEXT NOT NULL DEFAULT '',
+                    password_hash TEXT NOT NULL,
+                    created_at TEXT NOT NULL DEFAULT '',
+                    stripe_customer_id TEXT NOT NULL DEFAULT '',
+                    stripe_subscription_id TEXT NOT NULL DEFAULT '',
+                    subscription_status TEXT NOT NULL DEFAULT 'free',
+                    current_period_end TEXT NOT NULL DEFAULT ''
+                )
+                """
+            )
+
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS settings (
+                    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+                    mode TEXT NOT NULL DEFAULT 'school',
+                    available_minutes INTEGER NOT NULL DEFAULT 120,
+                    streak INTEGER NOT NULL DEFAULT 0,
+                    updated_at TEXT NOT NULL DEFAULT '',
+                    last_streak_at TEXT NOT NULL DEFAULT '',
+                    xp INTEGER NOT NULL DEFAULT 0,
+                    level INTEGER NOT NULL DEFAULT 1,
+                    combo INTEGER NOT NULL DEFAULT 0,
+                    last_xp_award_at TEXT NOT NULL DEFAULT ''
+                )
+                """
+            )
+
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS classes (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    name TEXT NOT NULL,
+                    created_at TEXT NOT NULL DEFAULT '',
+                    UNIQUE(user_id, name)
+                )
+                """
+            )
+
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS assignments (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    class_id INTEGER REFERENCES classes(id) ON DELETE SET NULL,
+                    title TEXT NOT NULL,
+                    due_date TEXT NOT NULL DEFAULT '',
+                    minutes INTEGER NOT NULL DEFAULT 30,
+                    status TEXT NOT NULL DEFAULT 'open',
+                    priority TEXT NOT NULL DEFAULT 'normal',
+                    task_type TEXT NOT NULL DEFAULT '',
+                    ignore_count INTEGER NOT NULL DEFAULT 0,
+                    last_planned_at TEXT NOT NULL DEFAULT '',
+                    last_completed_at TEXT NOT NULL DEFAULT '',
+                    created_at TEXT NOT NULL DEFAULT '',
+                    updated_at TEXT NOT NULL DEFAULT ''
+                )
+                """
+            )
+
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS events (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    name TEXT NOT NULL,
+                    start_time TEXT NOT NULL,
+                    end_time TEXT NOT NULL,
+                    date TEXT NOT NULL,
+                    created_at TEXT NOT NULL DEFAULT ''
+                )
+                """
+            )
+
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS notes (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    title TEXT NOT NULL DEFAULT 'Untitled',
+                    body TEXT NOT NULL DEFAULT '',
+                    content TEXT NOT NULL DEFAULT '',
+                    tag TEXT NOT NULL DEFAULT 'general',
+                    created_at TEXT NOT NULL DEFAULT '',
+                    updated_at TEXT NOT NULL DEFAULT ''
+                )
+                """
+            )
+
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS flashcards (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    class_id INTEGER REFERENCES classes(id) ON DELETE SET NULL,
+                    front TEXT NOT NULL,
+                    back TEXT NOT NULL,
+                    last_reviewed TEXT NOT NULL DEFAULT '',
+                    ease DOUBLE PRECISION NOT NULL DEFAULT 2.5,
+                    interval_days INTEGER NOT NULL DEFAULT 0,
+                    due_date TEXT NOT NULL DEFAULT '',
+                    created_at TEXT NOT NULL DEFAULT '',
+                    updated_at TEXT NOT NULL DEFAULT ''
+                )
+                """
+            )
+
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS quizzes (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    title TEXT NOT NULL,
+                    questions_json TEXT NOT NULL DEFAULT '[]',
+                    created_at TEXT NOT NULL DEFAULT '',
+                    updated_at TEXT NOT NULL DEFAULT ''
+                )
+                """
+            )
+
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS daily_plan (
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    day TEXT NOT NULL,
+                    payload_json TEXT NOT NULL,
+                    created_at TEXT NOT NULL DEFAULT '',
+                    PRIMARY KEY(user_id, day)
+                )
+                """
+            )
+
+            conn.execute("UPDATE assignments SET priority='normal' WHERE priority IS NULL OR priority='';")
+            conn.execute("UPDATE assignments SET task_type='' WHERE task_type IS NULL;")
+            conn.execute("UPDATE assignments SET ignore_count=0 WHERE ignore_count IS NULL;")
+            conn.execute("UPDATE assignments SET last_planned_at='' WHERE last_planned_at IS NULL;")
+            conn.execute("UPDATE assignments SET last_completed_at='' WHERE last_completed_at IS NULL;")
+
+            conn.execute("UPDATE notes SET title='Untitled' WHERE title IS NULL;")
+            conn.execute("UPDATE notes SET body='' WHERE body IS NULL;")
+            conn.execute("UPDATE notes SET content='' WHERE content IS NULL;")
+            conn.execute("UPDATE notes SET tag='general' WHERE tag IS NULL;")
+            conn.execute("UPDATE notes SET created_at='' WHERE created_at IS NULL;")
+            conn.execute("UPDATE notes SET updated_at='' WHERE updated_at IS NULL;")
+            conn.execute("UPDATE notes SET body=content WHERE (body='' OR body IS NULL) AND content<>'';")
+            conn.execute("UPDATE notes SET content=body WHERE (content='' OR content IS NULL) AND body<>'';")
+
+            conn.commit()
+            return
+
+        # ---------------- SQLite path ----------------
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS users (
@@ -244,7 +518,6 @@ def ensure_schema() -> None:
         if not _column_exists(conn, "users", "current_period_end"):
             conn.execute("ALTER TABLE users ADD COLUMN current_period_end TEXT NOT NULL DEFAULT '';")
 
-        # settings
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS settings (
@@ -278,7 +551,6 @@ def ensure_schema() -> None:
         if not _column_exists(conn, "settings", "last_xp_award_at"):
             conn.execute("ALTER TABLE settings ADD COLUMN last_xp_award_at TEXT NOT NULL DEFAULT '';")
 
-        # classes
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS classes (
@@ -292,7 +564,6 @@ def ensure_schema() -> None:
             """
         )
 
-        # assignments
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS assignments (
@@ -335,7 +606,6 @@ def ensure_schema() -> None:
         conn.execute("UPDATE assignments SET last_planned_at='' WHERE last_planned_at IS NULL;")
         conn.execute("UPDATE assignments SET last_completed_at='' WHERE last_completed_at IS NULL;")
 
-        # events
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS events (
@@ -351,7 +621,6 @@ def ensure_schema() -> None:
             """
         )
 
-        # notes
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS notes (
@@ -389,7 +658,6 @@ def ensure_schema() -> None:
         conn.execute("UPDATE notes SET body=content WHERE (body='' OR body IS NULL) AND content<>'';")
         conn.execute("UPDATE notes SET content=body WHERE (content='' OR content IS NULL) AND body<>'';")
 
-        # flashcards
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS flashcards (
@@ -413,7 +681,6 @@ def ensure_schema() -> None:
         if not _column_exists(conn, "flashcards", "class_id"):
             conn.execute("ALTER TABLE flashcards ADD COLUMN class_id INTEGER;")
 
-        # quizzes
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS quizzes (
@@ -431,7 +698,6 @@ def ensure_schema() -> None:
         if not _column_exists(conn, "quizzes", "questions_json"):
             conn.execute("ALTER TABLE quizzes ADD COLUMN questions_json TEXT NOT NULL DEFAULT '[]';")
 
-        # daily plan cache
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS daily_plan (
